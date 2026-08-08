@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Preview | NMT Admin</title>
+<link rel="icon" href="../assets/icons/logo.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="../css/style.css?v=4" />
+<link rel="stylesheet" href="../css/exam.css?v=6" />
+<link rel="stylesheet" href="../css/review.css?v=3" />
+<link rel="stylesheet" href="css/style.css?v=4" />
+<link rel="stylesheet" href="css/editor.css?v=9" />
+<link rel="stylesheet" href="css/responsive.css?v=5" />
+</head>
+<body class="exam-body">
+  <div class="page-loader" id="pageLoader" aria-hidden="true"><div class="spinner"></div></div>
+
+  <header class="exam-topbar">
+    <div class="exam-topbar-inner">
+      <span class="exam-progress-text" id="previewProgressText">Question 1 / 1</span>
+      <a href="editor.html" class="btn btn-secondary btn-sm">Back to Editor</a>
+    </div>
+  </header>
+
+  <div class="exam-util-row">
+    <span class="exam-test-title" id="previewTestTitle">Preview</span>
+    <span class="badge badge-category">Preview mode — read only</span>
+  </div>
+
+  <div class="section-banner" id="sectionBanner" hidden>
+    <span class="section-banner-index" id="sectionBannerIndex">Section 1 of 4</span>
+    <h1 class="section-banner-title" id="sectionBannerTitle">Section</h1>
+  </div>
+
+  <main class="exam-main">
+    <div id="previewRoot"></div>
+  </main>
+
+  <nav class="bottom-nav" style="grid-template-columns: 1fr 1fr;">
+    <button type="button" class="bottom-nav-btn" id="previewPrevBtn">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      <span>Previous</span>
+    </button>
+    <button type="button" class="bottom-nav-btn" id="previewNextBtn">
+      <span>Next</span>
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+  </nav>
+
+  <script type="module" src="js/preview.js?v=10"></script>
+</body>
+</html>

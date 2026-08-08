@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Settings | NMT Admin</title>
+<link rel="icon" href="../assets/icons/logo.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="../css/style.css?v=4" />
+<link rel="stylesheet" href="css/style.css?v=4" />
+<link rel="stylesheet" href="css/editor.css?v=9" />
+<link rel="stylesheet" href="css/responsive.css?v=5" />
+</head>
+<body>
+  <div class="page-loader" id="pageLoader" aria-hidden="true"><div class="spinner"></div></div>
+
+  <header class="topbar">
+    <div class="topbar-inner container">
+      <div class="brand">
+        <a href="editor.html" class="icon-btn" aria-label="Back to editor">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </a>
+        <span class="brand-name">Settings</span>
+      </div>
+      <button id="darkModeToggle" class="icon-btn" type="button" aria-label="Toggle dark mode">
+        <svg class="icon icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="container dashboard-main" style="max-width: 640px;">
+    <div class="admin-header">
+      <div>
+        <h1 class="admin-header-title">Site Settings</h1>
+        <p class="admin-header-subtitle">Saved into data/settings.json — download the updated file below and replace it in your repo to apply changes (no backend, so nothing saves itself automatically).</p>
+      </div>
+    </div>
+
+    <div class="settings-panel" id="settingsForm" style="display:flex; flex-direction:column; gap:20px;">
+      <div class="field-group">
+        <label class="field-label" for="siteTitleInput">Site Title</label>
+        <input type="text" id="siteTitleInput" class="text-input" placeholder="Nihongo Mock Test" />
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Logo</label>
+        <div class="upload-row">
+          <input type="file" id="logoInput" accept="image/*" />
+          <img id="logoPreview" class="upload-preview" alt="Logo preview" hidden />
+          <button type="button" class="upload-clear-btn" id="logoClearBtn" hidden>Remove</button>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="themeColorInput">Theme Color</label>
+        <div class="upload-row">
+          <input type="color" id="themeColorInput" value="#1e88e5" style="width:52px;height:44px;padding:2px;border-radius:8px;border:1px solid var(--color-border);" />
+          <input type="text" id="themeColorTextInput" class="text-input" style="max-width:140px;" placeholder="#1e88e5" />
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label" for="timerDefaultInput">Timer Default (minutes)</label>
+          <input type="number" id="timerDefaultInput" class="text-input" placeholder="60" />
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="passingMarksInput">Passing Marks Default</label>
+          <input type="number" id="passingMarksInput" class="text-input" placeholder="200" />
+        </div>
+      </div>
+
+      <div class="form-actions-row">
+        <button type="button" class="btn btn-primary" id="downloadSettingsBtn">Download settings.json</button>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="js/settings.js?v=5"></script>
+</body>
+</html>

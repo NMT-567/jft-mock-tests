@@ -1,0 +1,816 @@
+.admin-body { background: var(--color-bg); height: 100vh; overflow: hidden; display: flex; flex-direction: column; --editor-toolbar-total-height: 128px; }
+
+/* =========================================================
+   SIDEBAR TOOLBAR ROW — search + filters + select, relocated
+   here from the top bar so the top bar only ever shows the
+   8 global actions (back/title/saved/undo/redo/dark/preview/export).
+   ========================================================= */
+.sidebar-toolbar-row { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+.sidebar-toolbar-row .text-input { flex: 1; min-width: 0; }
+.filter-chip-row { display: flex; gap: 6px; flex-wrap: wrap; padding: 10px; max-width: 260px; }
+.dropdown-menu-filters { padding: 0; }
+
+/* =========================================================
+   SELECT PANEL — replaces the old Select ▾ dropdown. Not a
+   .dropdown-menu (deliberately its own class/behavior per the
+   "remove all dropdowns" redesign), but visually consistent:
+   a small anchored panel, not a full-width overlay.
+   ========================================================= */
+.popover-anchor { position: relative; }
+.select-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  left: auto;
+  min-width: 220px;
+  max-width: min(280px, calc(100vw - 32px));
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  z-index: 100;
+  flex-direction: column;
+  overflow: hidden;
+  /* Closed state is the DEFAULT (not gated behind [hidden]) — a plain
+     ".select-panel { display:flex }" rule would out-cascade the browser's
+     own [hidden]{display:none} UA rule since both have equal specificity
+     and author styles win ties, so the panel could render even while
+     `hidden` is set. display:none here is the true baseline; the
+     :not([hidden]) rule below is the only thing that ever shows it. */
+  display: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+}
+.select-panel:not([hidden]) {
+  display: flex;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+.select-panel button {
+  padding: 10px 14px;
+  text-align: left;
+  background: none;
+  border: none;
+  font-size: 0.88rem;
+  color: var(--color-text);
+}
+.select-panel button:hover { background: var(--color-surface-alt); }
+
+/* =========================================================
+   DOCUMENT EDITOR (center panel) — sections -> groups -> cards
+   ========================================================= */
+.doc-root { max-width: min(100%, 900px); margin: 0 auto; display: flex; flex-direction: column; gap: 8px; }
+
+.section-doc { margin-bottom: 6px; }
+.section-doc-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 6px;
+}
+.section-doc-collapse-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  transition: transform var(--transition-fast);
+}
+.section-doc-collapse-btn.collapsed { transform: rotate(-90deg); }
+.section-doc-title-input {
+  font-size: 1.3rem;
+  font-weight: 800;
+  border: none;
+  background: none;
+  color: var(--color-text);
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+}
+.section-doc-title-input:focus { outline: none; background: var(--color-surface-alt); }
+.section-doc-actions { display: flex; gap: 4px; flex-shrink: 0; flex-wrap: wrap; }
+.section-doc-body { display: flex; flex-direction: column; gap: 14px; padding-left: 8px; }
+.section-doc-body.collapsed { display: none; }
+.section-doc-add-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+
+.group-doc-block {
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  background: var(--color-surface-alt);
+  transition: box-shadow var(--transition-fast);
+}
+.group-doc-block:hover { box-shadow: var(--shadow-sm); }
+.group-doc-block.collapsed { padding: 10px 18px; }
+.group-doc-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.group-doc-block.collapsed .group-doc-header { margin-bottom: 0; }
+.group-doc-collapse-btn { flex-shrink: 0; }
+.group-doc-collapsed-summary { color: var(--color-text-muted); font-size: 0.82rem; padding: 2px 4px 0 38px; }
+.group-doc-type-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  flex-shrink: 0;
+}
+.group-doc-title-input { flex: 1; min-width: 0; font-weight: 700; border: none; background: none; padding: 4px 8px; border-radius: var(--radius-sm); color: var(--color-text); }
+.group-doc-title-input:focus { outline: none; background: var(--color-surface-alt); }
+
+.group-doc-shared-fields { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed var(--color-border); }
+.group-doc-questions { display: flex; flex-direction: column; gap: 8px; }
+
+.question-doc-card {
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  background: var(--color-surface);
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+.question-doc-card.bookmarked { border-left: 4px solid var(--color-warning); }
+.question-doc-body { display: flex; flex-direction: column; gap: 10px; }
+.question-doc-top-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.question-doc-badge { font-weight: 700; font-size: 0.85rem; background: var(--color-primary); color: #fff; padding: 3px 12px; border-radius: 999px; flex-shrink: 0; }
+.question-doc-icon-actions { display: flex; gap: 4px; flex-wrap: wrap; }
+.question-doc-incomplete-flag { font-size: 0.72rem; font-weight: 700; color: var(--color-danger); background: var(--color-danger-light); padding: 3px 10px; border-radius: 999px; }
+
+/* One-click action buttons (Move Up/Down, Merge, Ungroup, Duplicate,
+   Delete) replace drag-and-drop and the multi-select toolbar entirely —
+   every reorder/merge/ungroup action is a single click, no dialog. */
+/* =========================================================
+   TOP PROGRESS BAR — the 4 fixed JFT sections
+   ========================================================= */
+.icon-btn-xs:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.progress-bar-sections {
+  display: flex;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+.progress-section-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--color-border);
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+  flex-shrink: 0;
+  min-width: 130px;
+  text-align: left;
+}
+.progress-section-pill:hover { border-color: var(--color-primary); }
+.progress-section-pill.complete { border-color: var(--color-success); background: var(--color-success-light); }
+.progress-section-pill.warning { border-color: var(--color-warning); background: var(--color-warning-light); }
+.progress-section-pill.active { border-color: var(--color-primary); border-width: 2px; box-shadow: var(--shadow-sm); }
+.progress-section-pill.active.complete { border-color: var(--color-success); }
+.progress-section-pill.active.warning { border-color: var(--color-warning); }
+.progress-section-title-row { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 0.85rem; }
+.progress-section-status { font-size: 0.8rem; }
+.progress-section-stats { font-size: 0.7rem; color: var(--color-text-muted); white-space: nowrap; }
+
+/* =========================================================
+   SECTION HEADER — sections are fixed and switching between
+   them is now done via the tabs above, so this is just a
+   plain icon + label, no collapse chevron, no title input,
+   no ⋮ menu (nothing left that's a valid action).
+   ========================================================= */
+.section-doc-fixed-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.3rem;
+  font-weight: 800;
+  padding: 4px 6px 14px;
+}
+
+/* =========================================================
+   SELECTION TOOLBAR (Google Photos style) — floats above the
+   bottom of the viewport, only ever in the DOM's flow when
+   `hidden` is removed (selectedIds.size > 0).
+   ========================================================= */
+.selection-toolbar {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  z-index: 120;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 18px;
+  background: var(--color-primary);
+  color: #fff;
+  flex-wrap: wrap;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  max-width: calc(100vw - 32px);
+  justify-content: center;
+  /* Same cascade-safety fix as .dropdown-menu/.select-panel: display:none
+     is the real default so the bulk toolbar can never render while its
+     `hidden` attribute is set (selectedIds.size === 0), including on
+     first load before any question is checked. */
+  display: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+}
+.selection-toolbar:not([hidden]) {
+  display: flex;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+.selection-toolbar-count { font-weight: 700; font-size: 0.9rem; white-space: nowrap; }
+.selection-toolbar-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.selection-toolbar .btn-secondary {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+.selection-toolbar .btn-secondary:hover { background: rgba(255, 255, 255, 0.25); }
+.selection-toolbar .icon-btn-sm { background: rgba(255, 255, 255, 0.15); border-color: rgba(255, 255, 255, 0.3); color: #fff; }
+.selection-toolbar .dropdown-menu { color: var(--color-text); }
+
+.question-doc-card-select { flex-shrink: 0; padding-top: 2px; }
+.question-doc-card-select input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--color-primary); cursor: pointer; }
+.question-doc-card { display: flex; gap: 12px; }
+.question-doc-card.selected { border-color: var(--color-primary); background: var(--color-primary-light); }
+.question-doc-card.required-flag { border-left: 4px solid var(--color-success); }
+.question-doc-card.bookmarked.required-flag { border-left-color: var(--color-warning); }
+.question-doc-required-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--color-success-light);
+  color: var(--color-success);
+}
+
+/* ⋮ overflow menu — danger items (Delete) render in red; dividers group related actions. */
+.dropdown-menu button.dropdown-danger { color: var(--color-danger); }
+.dropdown-divider { height: 1px; background: var(--color-border); margin: 4px 6px; }
+
+/* Progressive disclosure: empty Image/Audio/Explanation hide behind these until clicked. */
+.add-field-btn { color: var(--color-text-muted); border: 1px dashed var(--color-border); }
+.add-field-btn:hover { color: var(--color-primary); border-color: var(--color-primary); background: var(--color-primary-light); }
+
+/* =========================================================
+   PHONE-FRAMED LIVE PREVIEW
+   ========================================================= */
+.phone-frame {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin: 14px;
+  border: 10px solid var(--color-text);
+  border-radius: 36px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: var(--shadow-lg);
+}
+html[data-theme="dark"] .phone-frame { border-color: var(--color-gray); }
+.phone-frame-notch {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90px;
+  height: 18px;
+  background: var(--color-text);
+  border-radius: 0 0 12px 12px;
+  z-index: 5;
+}
+html[data-theme="dark"] .phone-frame-notch { background: var(--color-gray); }
+.phone-frame .preview-pane-body { flex: 1; padding-top: 24px; }
+
+/* =========================================================
+   TOOLBAR
+   ========================================================= */
+.editor-toolbar {
+  flex-shrink: 0;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+
+}
+.editor-toolbar-inner {
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 16px;
+}
+.toolbar-title-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-text);
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+}
+.toolbar-title-input:focus { outline: none; background: var(--color-surface-alt); }
+.save-status {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.save-status.saving { color: var(--color-warning); }
+.save-status.error { color: var(--color-danger); }
+.total-score-badge {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-text);
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 5px 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.toolbar-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+/* =========================================================
+   LAYOUT — sidebar | form | preview
+   ========================================================= */
+.editor-layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 240px minmax(500px, 1fr) 360px;
+  min-height: 0;
+}
+
+.editor-sidebar {
+  border-right: 1px solid var(--color-border);
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 14px;
+  gap: 12px;
+}
+.sidebar-search { flex-shrink: 0; }
+
+.sidebar-settings-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-alt);
+  color: var(--color-text);
+  font-weight: 600;
+  font-size: 0.88rem;
+  flex-shrink: 0;
+}
+.sidebar-settings-btn.active { border-color: var(--color-primary); background: var(--color-primary-light); color: var(--color-primary-dark); }
+.sidebar-settings-btn .icon { width: 16px; height: 16px; }
+
+.sidebar-add-group { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+.btn-block { width: 100%; justify-content: flex-start; }
+
+.dropdown { position: relative; }
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  left: auto;
+  min-width: 200px;
+  max-width: min(320px, calc(100vw - 32px));
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  z-index: 100;
+  flex-direction: column;
+  overflow: hidden;
+  /* Same cascade-safety fix as .select-panel — display:none is the real
+     default, not merely implied by [hidden], so a menu can never render
+     while its `hidden` attribute is set (including right after page load). */
+  display: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+}
+.dropdown-menu:not([hidden]) {
+  display: flex;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+.dropdown-menu button {
+  padding: 10px 14px;
+  text-align: left;
+  background: none;
+  border: none;
+  font-size: 0.88rem;
+  color: var(--color-text);
+}
+.dropdown-menu button:hover { background: var(--color-surface-alt); }
+
+.sidebar-tree {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  flex-direction: column;
+  gap: 4px;
+  /* Same [hidden]-vs-display cascade fix as the popups above — this isn't
+     a popup itself, but it's toggled the same way (switchSidebarTab) and
+     had the identical latent bug: display:flex would win over [hidden],
+     so the Outline tree could stay visibly rendered underneath the
+     Question Bank tab instead of actually hiding. */
+  display: none;
+}
+.sidebar-tree:not([hidden]) { display: flex; }
+
+.tree-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: var(--color-text);
+  border: 1px solid transparent;
+}
+.tree-item:hover { background: var(--color-surface-alt); }
+.tree-item.selected { background: var(--color-primary-light); border-color: var(--color-primary); color: var(--color-primary-dark); font-weight: 600; }
+.tree-item .tree-item-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.sidebar-tabs { display: flex; gap: 4px; padding: 2px; background: var(--color-surface-alt); border-radius: var(--radius-sm); flex-shrink: 0; }
+.sidebar-tab { flex: 1; padding: 8px 10px; border: none; background: none; border-radius: var(--radius-sm); font-size: 0.82rem; font-weight: 600; color: var(--color-text-muted); }
+.sidebar-tab.active { background: var(--color-surface); color: var(--color-text); box-shadow: var(--shadow-sm); }
+
+.bank-panel { flex: 1; flex-direction: column; gap: 10px; min-height: 0; overflow: hidden; display: none; }
+.bank-panel:not([hidden]) { display: flex; }
+.bank-panel-hint { font-size: 0.76rem; color: var(--color-text-muted); margin: 0; flex-shrink: 0; }
+.bank-panel-hint a { color: var(--color-primary); }
+.bank-panel-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+.bank-panel-item {
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  cursor: pointer;
+  background: var(--color-surface);
+}
+.bank-panel-item:hover { border-color: var(--color-primary); background: var(--color-surface-alt); }
+.bank-panel-item-meta { color: var(--color-text-muted); font-size: 0.7rem; margin-top: 2px; }
+
+.tree-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 10px;
+  margin-top: 8px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--color-text);
+  background: var(--color-surface-alt);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.tree-section-header:first-child { margin-top: 0; }
+.tree-section-header:hover { background: var(--color-gray-light); }
+.tree-section-header.selected { background: var(--color-primary-light); color: var(--color-primary-dark); }
+.tree-section-children { padding-left: 10px; display: flex; flex-direction: column; gap: 2px; margin-top: 2px; }
+
+.tree-group-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+.tree-group-header:hover { background: var(--color-surface-alt); }
+.tree-group-header.selected { color: var(--color-primary-dark); background: var(--color-primary-light); }
+.tree-group-children { padding-left: 20px; display: flex; flex-direction: column; gap: 2px; }
+
+/* =========================================================
+   FORM PANEL (center)
+   ========================================================= */
+.editor-form-panel {
+  overflow-y: auto;
+  padding: 24px;
+  min-height: 0;
+}
+.editor-form-panel.has-floating-toolbar { padding-bottom: 100px; }
+
+.form-section { max-width: 640px; margin: 0 auto; }
+.form-section-title { font-size: 1.2rem; font-weight: 700; margin: 0 0 6px; }
+.form-section-subtitle { color: var(--color-text-muted); font-size: 0.88rem; margin: 0 0 24px; }
+
+.field-group { margin-bottom: 12px; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+textarea.text-input { resize: vertical; min-height: 90px; font-family: inherit; overflow-wrap: anywhere; }
+.question-textarea { min-height: 60px; height: 68px; resize: vertical; overflow: hidden; }
+
+.field-checkbox { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.field-checkbox input { width: 18px; height: 18px; accent-color: var(--color-primary); }
+
+.upload-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.upload-preview { max-width: 120px; max-height: 80px; border-radius: var(--radius-sm); border: 1px solid var(--color-border); object-fit: contain; }
+.upload-preview-group { max-width: 280px; max-height: 200px; }
+.upload-clear-btn { font-size: 0.78rem; color: var(--color-danger); background: none; border: none; }
+
+.option-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 6px; }
+.option-row:last-child { margin-bottom: 0; }
+.option-row .option-input { flex: 1; min-width: 0; }
+.option-delete-btn { flex-shrink: 0; margin-top: 7px; color: var(--color-text-muted); }
+.option-delete-btn:hover { color: var(--color-danger); }
+.options-editor { margin-bottom: 4px; }
+.add-option-btn { margin-top: 4px; }
+/* Options were plain <input>s, which can never wrap — long Japanese
+   options either clipped or forced horizontal scroll. A single-row
+   auto-growing textarea (JS grows it on input) fixes that: one line by
+   default (~44-52px including .text-input's padding, matching the
+   normal option-height target) and grows only for genuinely long text. */
+.option-input {
+  resize: none;
+  overflow: hidden;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  font-family: inherit;
+  padding: 8px 10px;
+  height: 44px;
+  min-height: 44px;
+  line-height: 1.4;
+}
+.option-row .option-letter {
+  width: 28px;
+  height: 28px;
+  margin-top: 8px;
+  border-radius: 50%;
+  background: var(--color-surface-alt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.option-row input[type="radio"] { width: 18px; height: 18px; margin-top: 13px; accent-color: var(--color-success); flex-shrink: 0; }
+
+.form-actions-row { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
+
+.child-question-list { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+.child-question-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.child-question-row:hover { border-color: var(--color-primary); }
+.child-question-row-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; }
+.child-question-row-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.icon-btn-xs { width: 30px; height: 30px; min-height: 30px; }
+.icon-btn-wide { width: auto; padding: 0 8px; font-size: 0.72rem; font-weight: 700; }
+
+.back-to-group-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin-bottom: 14px;
+  background: none;
+  border: none;
+}
+.back-to-group-link:hover { color: var(--color-primary); }
+
+.empty-state { text-align: center; color: var(--color-text-muted); padding: 60px 20px; }
+.empty-state h2 { color: var(--color-text); }
+
+/* =========================================================
+   LIVE PREVIEW PANE (right)
+   ========================================================= */
+.editor-preview-pane {
+  border-left: 1px solid var(--color-border);
+  background: var(--color-bg);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.preview-pane-header {
+  flex-shrink: 0;
+  padding: 14px 18px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.preview-pane-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px;
+  /* #previewPaneContent also carries the shared .exam-body class (so the
+     real exam CSS renders its content correctly) — but exam-body's own
+     min-height:100vh and bottom-nav padding are meant for the real
+     full-page student exam, not a preview pane inside a phone frame.
+     Left as-is those forced the preview to always be full-viewport-tall
+     regardless of how little content there was — the actual root cause
+     of "phone preview too tall / huge blank space" rather than anything
+     about the phone frame's own sizing. Overridden here at higher
+     specificity — css/exam.css itself is untouched. */
+  min-height: 0;
+  padding-bottom: 18px;
+}
+.preview-pane-body .question-card { margin: 0 auto; }
+.preview-progress-note { text-align: center; color: var(--color-text-muted); font-size: 0.78rem; margin-top: 12px; }
+
+/* =========================================================
+   FLOATING SAVE
+   ========================================================= */
+.floating-save-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 12px 18px;
+  box-shadow: var(--shadow-lg);
+  font-weight: 600;
+  font-size: 0.85rem;
+  z-index: 60;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+}
+.floating-save-btn.saved { color: var(--color-success); border-color: var(--color-success); }
+.floating-save-btn.saving { color: var(--color-warning); border-color: var(--color-warning); }
+.floating-save-btn:active { transform: scale(0.96); }
+
+/* =========================================================
+   MOVE / MERGE / CONVERT DIALOGS — replace the removed nested
+   dropdowns. Move & Merge: pick a radio option, confirm with a
+   button. Convert: large tappable cards, converts immediately
+   on click (matches the spec's mockups — no separate confirm
+   button on the Convert dialog).
+   ========================================================= */
+.dialog-radio-list { display: flex; flex-direction: column; gap: 2px; margin: 16px 0; }
+.dialog-radio-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.dialog-radio-option:hover { background: var(--color-surface-alt); }
+.dialog-radio-option input[type="radio"] { width: 18px; height: 18px; accent-color: var(--color-primary); flex-shrink: 0; }
+.dialog-radio-option span { font-size: 0.95rem; }
+
+.convert-card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+.convert-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 28px 12px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-alt);
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--color-text);
+  text-align: center;
+}
+.convert-card:hover { border-color: var(--color-primary); background: var(--color-primary-light); color: var(--color-primary-dark); }
+.convert-card-icon { font-size: 2rem; }
+.modal-convert { max-width: 420px; }
+
+/* =========================================================
+   CALCULATE SCORES MODAL
+   ========================================================= */
+.modal-scores { max-width: 480px; max-height: 85vh; }
+.modal-scores .modal-body { overflow-y: auto; max-height: 85vh; }
+.scores-block { margin-bottom: 20px; }
+.scores-block:last-child { margin-bottom: 0; }
+.scores-block h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--color-text-muted); margin: 0 0 8px; }
+.scores-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.92rem; border-bottom: 1px solid var(--color-border); }
+.scores-row:last-child { border-bottom: none; }
+.scores-value { font-weight: 700; }
+.scores-section { padding: 10px 0; border-top: 1px dashed var(--color-border); }
+.scores-section:first-of-type { border-top: none; }
+.scores-section-title { font-weight: 700; margin-bottom: 4px; }
+.scores-section .scores-row { padding: 3px 0; border-bottom: none; font-size: 0.85rem; }
+.modal-result-settings { max-width: 560px; max-height: 85vh; }
+.modal-result-settings .modal-body { overflow-y: auto; max-height: 85vh; }
+.scores-block-title { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--color-text-muted); margin: 20px 0 8px; }
+.scores-block-title:first-child { margin-top: 0; }
+
+/* =========================================================
+   VALIDATION MODAL / TOASTS
+   ========================================================= */
+.validation-error-list { max-height: 320px; overflow-y: auto; padding-left: 20px; color: var(--color-danger); font-size: 0.9rem; }
+.validation-error-list li { margin-bottom: 8px; }
+
+.toast-container {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+.toast {
+  background: var(--color-text);
+  color: var(--color-surface);
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+  box-shadow: var(--shadow-md);
+}
+.toast.visible { opacity: 1; transform: translateY(0); }
+.toast-error { background: var(--color-danger); }
+.toast-success { background: var(--color-success); }
+
+/* =========================================================
+   MOBILE EDIT/PREVIEW TABS (hidden above 900px, see responsive.css)
+   ========================================================= */
+.mobile-edit-preview-tabs {
+  display: none;
+  gap: 4px;
+  padding: 6px 16px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+.mobile-ep-tab {
+  flex: 1;
+  padding: 8px 10px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-alt);
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.mobile-ep-tab.active { background: var(--color-primary); color: #fff; }
+
+/* =========================================================
+   MOBILE PANEL TOGGLES (hidden on desktop, see responsive.css)
+   ========================================================= */
+.mobile-panel-toggle {
+  display: none;
+  position: fixed;
+  bottom: 24px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  box-shadow: var(--shadow-lg);
+  z-index: 65;
+  align-items: center;
+  justify-content: center;
+}
+#mobileSidebarToggle { left: 24px; }

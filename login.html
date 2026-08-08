@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sign In | NMT CBT</title>
+<link rel="icon" href="assets/icons/logo.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="css/style.css?v=4" />
+<link rel="stylesheet" href="css/responsive.css?v=3" />
+</head>
+<body>
+  <div class="page-loader" id="pageLoader" aria-hidden="true">
+    <div class="spinner"></div>
+  </div>
+
+  <header class="topbar">
+    <div class="topbar-inner container">
+      <div class="brand">
+        <img src="assets/icons/logo.svg" alt="" class="brand-logo" />
+        <span class="brand-name">Nihongo Mock Test</span>
+      </div>
+      <button id="darkModeToggle" class="icon-btn" type="button" aria-label="Toggle dark mode">
+        <svg class="icon icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="container home-main">
+    <section class="card home-card" style="max-width: 420px; text-align: center;">
+      <div class="home-card-header">
+        <h1 class="home-title">JFT Mock Test</h1>
+        <p style="color: var(--color-text-muted); font-size: 0.88rem; margin: 8px 0 24px;">
+          Sign in with the Google account your administrator has authorized.
+        </p>
+      </div>
+
+      <button type="button" class="btn btn-secondary btn-lg google-signin-btn" id="googleSignInBtn" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;">
+        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+          <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9C16.64 14.2 17.64 11.9 17.64 9.2z"/>
+          <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.96v2.33A9 9 0 0 0 9 18z"/>
+          <path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.66 9c0-.59.1-1.17.29-1.7V4.97H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.03l2.99-2.33z"/>
+          <path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.97l2.99 2.33C4.66 5.17 6.65 3.58 9 3.58z"/>
+        </svg>
+        <span>Continue with Google</span>
+      </button>
+
+      <p class="field-error" id="loginError" role="alert" hidden style="margin-top: 16px;"></p>
+    </section>
+  </main>
+
+  <script type="module" src="js/login.js?v=5"></script>
+</body>
+</html>

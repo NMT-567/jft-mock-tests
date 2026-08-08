@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard | NMT Admin</title>
+<link rel="icon" href="../assets/icons/logo.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="../css/style.css?v=4" />
+<link rel="stylesheet" href="css/style.css?v=4" />
+<link rel="stylesheet" href="css/responsive.css?v=5" />
+</head>
+<body>
+  <div class="page-loader" id="pageLoader" aria-hidden="true"><div class="spinner"></div></div>
+
+  <header class="topbar">
+    <div class="topbar-inner container">
+      <div class="brand">
+        <img src="../assets/icons/logo.svg" alt="" class="brand-logo" />
+        <span class="brand-name">NMT Admin</span>
+      </div>
+      <button id="darkModeToggle" class="icon-btn" type="button" aria-label="Toggle dark mode">
+        <svg class="icon icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="container dashboard-main">
+    <div class="admin-header">
+      <div>
+        <h1 class="admin-header-title">Test Admin</h1>
+        <p class="admin-header-subtitle">Create, edit, preview and export JSON for the student CBT app — everything stays on this device.</p>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <button type="button" class="action-card" id="createTestBtn">
+        <span class="action-card-icon">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </span>
+        <p class="action-card-title">Create New Test</p>
+        <p class="action-card-desc">Start a blank test and build it question by question.</p>
+      </button>
+
+      <button type="button" class="action-card" id="openExistingBtn">
+        <span class="action-card-icon">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        </span>
+        <p class="action-card-title">Open Existing Test</p>
+        <p class="action-card-desc">Jump back into the test you last worked on.</p>
+      </button>
+
+      <a href="import.html" class="action-card" id="importJsonBtn">
+        <span class="action-card-icon">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </span>
+        <p class="action-card-title">Import JSON</p>
+        <p class="action-card-desc">Load a Selected_Mock_Tests.json — including passage/reading groups — with a full preview before anything is saved.</p>
+      </a>
+
+      <a href="bank.html" class="action-card">
+        <span class="action-card-icon">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        </span>
+        <p class="action-card-title">Question Bank</p>
+        <p class="action-card-desc">Browse, search, and manage every question — shared across all tests.</p>
+      </a>
+
+      <a href="users.html" class="action-card">
+        <span class="action-card-icon">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </span>
+        <p class="action-card-title">Users</p>
+        <p class="action-card-desc">Approve Google accounts and control who can access which published tests.</p>
+      </a>
+
+      <a href="tests.html" class="action-card">
+        <span class="action-card-icon">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/></svg>
+        </span>
+        <p class="action-card-title">Mock Tests</p>
+        <p class="action-card-desc">Manage published Supabase tests: publish/unpublish, preview, preview as a specific user.</p>
+      </a>
+    </div>
+
+    <div id="recentTestsSection">
+      <h2 class="section-heading">Recent Tests</h2>
+      <div class="recent-tests-list" id="recentTestsList"></div>
+    </div>
+
+    <h2 class="section-heading">
+      Settings
+      <span style="display:flex; gap:8px;">
+        <button type="button" class="btn btn-ghost" id="preferencesBtn">Preferences</button>
+        <a href="settings.html" class="btn btn-secondary">Open Settings</a>
+      </span>
+    </h2>
+  </main>
+
+  <dialog id="settingsModal" class="modal">
+    <div class="modal-body">
+      <h2>Preferences</h2>
+      <p style="color: var(--color-text-muted); font-size: 0.85rem; margin-top: -8px;">Local to this browser only. For the exam password, site title, logo, theme color, and defaults, use <a href="settings.html">Settings</a> instead.</p>
+      <div class="settings-panel">
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">Auto Save</div>
+            <div class="settings-row-desc">Every edit is saved to this browser's local storage automatically.</div>
+          </div>
+          <button type="button" class="toggle-switch on" id="autoSaveToggle" aria-label="Toggle auto save"></button>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">Data Location</div>
+            <div class="settings-row-desc">No login, no server — everything lives in this browser's localStorage only.</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-primary" id="closeSettingsBtn">Done</button>
+      </div>
+    </div>
+  </dialog>
+
+  <footer class="site-footer">
+    <p>&copy; <span id="year"></span> Nihongo Mock Test Admin.</p>
+  </footer>
+
+  <script type="module" src="js/app.js?v=4"></script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+-- NMT CBT — Session 18: grant missing base write privileges on `tests`.
+--
+-- 0001_init.sql created public.tests and its RLS policies
+-- (tests_admin_write/tests_admin_update/tests_admin_delete — all three
+-- already correctly gate on is_admin(auth.uid())) but never contained an
+-- explicit `grant insert/update/delete ... to authenticated` statement.
+-- Every migration in this project assumed Supabase's project-level
+-- default privileges would auto-grant DML to `authenticated` on any
+-- newly created table, the way a typical Supabase project's baseline
+-- does. On this project, that assumption didn't hold — confirmed via
+-- `permission denied for table tests` on "Publish to Supabase" (a
+-- privilege-layer rejection, distinct from an RLS policy violation,
+-- which would instead say "new row violates row-level security policy").
+--
+-- This migration only ADDS the missing base grant. It does not touch,
+-- weaken, or duplicate any RLS policy — is_admin() is still what
+-- actually decides who can use these privileges; this just makes sure
+-- the privilege check upstream of RLS doesn't reject an admin before
+-- RLS even gets a chance to run.
+--
+-- Scope: `tests` only, since that's the one confirmed failing so far.
+-- test_access and test_attempts are NOT touched here even though the
+-- same root cause could plausibly affect them too (this project's
+-- baseline defaults, whatever they are, apply schema-wide) — flagging
+-- that as something to watch for if a similar "permission denied"
+-- ever surfaces for those tables (e.g. a real student's first attempt),
+-- rather than granting privileges on tables with no confirmed problem.
+
+grant insert, update, delete on public.tests to authenticated;

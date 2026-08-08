@@ -1,0 +1,177 @@
+.result-main { padding: 32px 20px 60px; max-width: 760px; }
+
+/* =========================================================
+   JFT RESULT INTRO
+   ========================================================= */
+.jft-result-intro { text-align: center; margin-bottom: 20px; }
+.jft-result-title-ja { font-size: 1.3rem; margin: 0 0 4px; }
+.jft-result-title-en { color: var(--color-text-muted); margin: 0 0 8px; font-size: 0.95rem; }
+.result-test-meta { color: var(--color-text-muted); font-size: 0.85rem; margin: 0; }
+
+/* =========================================================
+   JFT SCORE PANEL
+   ========================================================= */
+.jft-score-panel {
+  text-align: center;
+  padding: 28px 24px;
+  margin-bottom: 20px;
+  border: 1.5px solid var(--color-border);
+}
+.jft-score-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  text-align: left;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.jft-score-label, .jft-score-range-label { display: flex; flex-direction: column; gap: 2px; }
+.jft-score-range-label { text-align: right; }
+.jft-score-label-ja { font-weight: 700; font-size: 0.95rem; }
+.jft-score-label-en { font-size: 0.78rem; color: var(--color-text-muted); }
+.jft-score-range-value { font-size: 0.85rem; font-weight: 600; margin-top: 2px; }
+
+.jft-score-big { font-size: 2.6rem; font-weight: 800; margin: 8px 0 24px; }
+.jft-score-unit { font-size: 1.1rem; font-weight: 600; color: var(--color-text-muted); }
+
+.score-range-bar { margin: 0 auto 20px; max-width: 480px; }
+.score-range-track {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--color-gray-light);
+  overflow: visible;
+}
+.score-range-fail-zone {
+  position: absolute;
+  top: 0; left: 0; height: 100%;
+  background: var(--color-warning);
+  border-radius: 999px 0 0 999px;
+  opacity: 0.55;
+  width: 0;
+  transition: width 0.8s ease;
+}
+.score-range-pass-zone {
+  position: absolute;
+  top: 0; height: 100%;
+  background: var(--color-success);
+  border-radius: 0 999px 999px 0;
+  opacity: 0.35;
+  width: 0;
+  left: 0;
+  transition: width 0.8s ease, left 0.8s ease;
+}
+.score-range-passing-marker {
+  position: absolute;
+  top: -6px;
+  left: 0;
+  transform: translateX(-50%);
+  transition: left 0.8s ease;
+}
+.score-range-passing-line { display: block; width: 2px; height: 22px; background: var(--color-text); }
+.score-range-student-marker {
+  position: absolute;
+  top: -14px;
+  left: 0;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: left 0.8s ease;
+}
+.score-range-marker-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-warning);
+  border: 3px solid var(--color-surface);
+  box-shadow: 0 0 0 1.5px var(--color-warning);
+}
+.score-range-student-marker.pass .score-range-marker-dot { background: var(--color-success); box-shadow: 0 0 0 1.5px var(--color-success); }
+.score-range-marker-value { font-weight: 800; font-size: 0.9rem; }
+
+.score-range-labels {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 14px;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+.score-range-passing-label { font-weight: 600; color: var(--color-text); }
+
+.jft-pass-fail-badge {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 8px 28px;
+  border-radius: var(--radius-md);
+  font-weight: 800;
+  margin: 4px 0 18px;
+  border: 1.5px solid var(--color-border);
+}
+.jft-pass-fail-badge.pass { background: var(--color-success-light); color: var(--color-success); border-color: var(--color-success); }
+.jft-pass-fail-badge.fail { background: var(--color-warning-light); color: var(--color-warning); border-color: var(--color-warning); }
+.jft-pass-fail-ja { font-size: 1.1rem; display: block; }
+.jft-pass-fail-en { font-size: 0.75rem; letter-spacing: 0.05em; display: block; }
+
+.jft-result-message-ja { margin: 0 0 4px; font-size: 0.98rem; }
+.jft-result-message-en { margin: 0; color: var(--color-text-muted); font-size: 0.88rem; }
+
+/* =========================================================
+   SECTION-BY-SECTION RESULTS
+   ========================================================= */
+.jft-section-results { padding: 24px; }
+.jft-section-results-title-ja { margin: 0 0 2px; font-size: 1.05rem; }
+.jft-section-results-title-en { margin: 0 0 20px; color: var(--color-text-muted); font-size: 0.85rem; }
+
+.section-result-item { margin-bottom: 20px; }
+.section-result-item:last-child { margin-bottom: 0; }
+.section-result-header { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
+.section-result-name { display: flex; flex-direction: column; }
+.section-result-name-ja { font-weight: 700; font-size: 0.92rem; }
+.section-result-name-en { font-size: 0.78rem; color: var(--color-text-muted); }
+.section-result-percentage { font-weight: 800; font-size: 1.1rem; flex-shrink: 0; }
+
+.section-result-bar-track { position: relative; height: 8px; border-radius: 999px; background: var(--color-gray-light); }
+.section-result-bar-fill { position: absolute; top: 0; left: 0; height: 100%; width: 0; background: var(--color-primary); border-radius: 999px; transition: width 0.8s ease; }
+.section-result-bar-dot {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  border: 2px solid var(--color-surface);
+  transform: translate(-50%, -50%);
+  transition: left 0.8s ease;
+}
+.section-result-detail { margin: 8px 0 0; font-size: 0.78rem; color: var(--color-text-muted); }
+
+.result-actions { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+.result-actions .btn { width: 100%; }
+
+/* =========================================================
+   PRINT — a clean official-looking score report; hide chrome
+   ========================================================= */
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; }
+  .result-main { max-width: 100%; padding: 0; }
+  .card, .jft-score-panel, .jft-section-results { border: 1px solid #999; box-shadow: none; break-inside: avoid; }
+  .score-range-fail-zone, .score-range-pass-zone, .section-result-bar-fill { opacity: 1 !important; }
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+@media (max-width: 600px) {
+  .jft-score-panel-header { flex-direction: column; }
+  .jft-score-range-label { text-align: left; }
+  .jft-score-big { font-size: 2rem; }
+  .score-range-bar { max-width: 100%; }
+}

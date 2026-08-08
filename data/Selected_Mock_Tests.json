@@ -1,0 +1,1014 @@
+{
+  "formatVersion": 2,
+  "source": "nmt-admin",
+  "exportedAt": "2026-08-03T12:48:36.279Z",
+  "id": "19e03109-c563-4df6-8e43-04a09ee730e3",
+  "title": "01 TOIRE UPDATED by NMT💥",
+  "categoryName": "JFT Basic",
+  "topic": "August & September Set",
+  "description": "",
+  "language": "en",
+  "duration": 60,
+  "noTimeLimit": false,
+  "passMarks": 200,
+  "active": true,
+  "premium": true,
+  "createdAt": "2026-07-27T10:08:49.654343+00:00",
+  "updatedAt": "2026-07-31T19:00:55.628635+00:00",
+  "sections": [
+    {
+      "id": "sec-1",
+      "title": "Scripts & Vocabulary",
+      "groups": [
+        {
+          "id": "grp-dd9a3493-caa0-48f3-845d-cf4ef03ff449",
+          "type": "single",
+          "title": "",
+          "imageUrl": "https://pub-5c42a6ad4e5340baafebed7973ffd605.r2.dev/question-media/questions/1785512427081-77NMT77--77877-.webp",
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "dd9a3493-caa0-48f3-845d-cf4ef03ff449",
+              "question": "Look at the illustration and choose the correct word.<br>🔲NihongoMockTest🔲",
+              "options": [
+                "といる",
+                "といれ",
+                "トイレ"
+              ],
+              "correctOption": "トイレ",
+              "explanation": "",
+              "marks": 3
+            }
+          ]
+        },
+        {
+          "id": "grp-b4aeb7c8-f04c-433e-bc47-0ab724ddf0fb",
+          "type": "single",
+          "title": "",
+          "imageUrl": "https://pub-5c42a6ad4e5340baafebed7973ffd605.r2.dev/question-media/questions/1785512440929-66NMT66--66766-.webp",
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "b4aeb7c8-f04c-433e-bc47-0ab724ddf0fb",
+              "question": "Look at the illustration and choose the correct word.<br>⬜NihongoMockTest⬜",
+              "options": [
+                "話す",
+                "紹介",
+                "自己紹介"
+              ],
+              "correctOption": "自己紹介",
+              "explanation": "",
+              "marks": 3
+            }
+          ]
+        },
+        {
+          "id": "grp-ad507dfc-49ce-4a57-a85a-e678727ffde4",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "ad507dfc-49ce-4a57-a85a-e678727ffde4",
+              "question": "男の人：「すみません、授業は何時からですか。」\n女の人：「午前１０時からです。」<br>☆NihongoMockTest☆",
+              "options": [
+                "ごぜん",
+                "ごせん",
+                "ごご"
+              ],
+              "correctOption": "ごぜん",
+              "explanation": "",
+              "marks": 4
+            }
+          ]
+        },
+        {
+          "id": "grp-2aea7f68-5926-48f4-aa2a-c4c8893ea1e8",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "2aea7f68-5926-48f4-aa2a-c4c8893ea1e8",
+              "question": "ほっかいどに<u>かぞく</u>と住んでいます。<br>🔘NihongoMockTest🔘",
+              "options": [
+                "友だち",
+                "家族",
+                "先生"
+              ],
+              "correctOption": "家族",
+              "explanation": "",
+              "marks": 5
+            }
+          ]
+        },
+        {
+          "id": "grp-f6e3e84e-2ce4-4167-84fe-29949358ebd0",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "f6e3e84e-2ce4-4167-84fe-29949358ebd0",
+              "question": "春は楽しい＿＿＿＿だ。<br>✏️NihongoMockTest✏️",
+              "options": [
+                "天気",
+                "季節",
+                "食べ物"
+              ],
+              "correctOption": "季節",
+              "explanation": "",
+              "marks": 5
+            }
+          ]
+        },
+        {
+          "id": "grp-bc750073-bff9-4024-8d66-18524b3063cb",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "bc750073-bff9-4024-8d66-18524b3063cb",
+              "question": "このかばん が 大きいです が , ______です。<br>🔹NihongoMockTest🔹",
+              "options": [
+                "かるい",
+                "おもい",
+                "ちいさい"
+              ],
+              "correctOption": "かるい",
+              "explanation": "",
+              "marks": 5
+            }
+          ]
+        },
+        {
+          "id": "grp-cc6afdac-6ceb-4666-93d3-6c575e87e75c",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "cc6afdac-6ceb-4666-93d3-6c575e87e75c",
+              "question": "<u>教室</u>で 走らないでください。<br>🔔NihongoMockTest🔔",
+              "options": [
+                "きうしつ",
+                "きょうしつ",
+                "きょしつ"
+              ],
+              "correctOption": "きょうしつ",
+              "explanation": "",
+              "marks": 5
+            }
+          ]
+        },
+        {
+          "id": "grp-8e34ff15-1aac-4c2d-b772-5d779113c570",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "8e34ff15-1aac-4c2d-b772-5d779113c570",
+              "question": "私達 は みんな<u>幸せ</u>です。<br>📘NihongoMockTest📘",
+              "options": [
+                "はなせ",
+                "せまいせ",
+                "しあわせ"
+              ],
+              "correctOption": "しあわせ",
+              "explanation": "",
+              "marks": 5
+            }
+          ]
+        },
+        {
+          "id": "grp-b4b60570-6a92-44bb-9216-4a27827f1ccd",
+          "type": "single",
+          "title": "",
+          "imageUrl": "https://pub-5c42a6ad4e5340baafebed7973ffd605.r2.dev/question-media/questions/1785512463526-55NMT55--55655-.webp",
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "b4b60570-6a92-44bb-9216-4a27827f1ccd",
+              "question": "Look at the illustration and choose the correct word.<br>☑NihongoMockTest☑",
+              "options": [
+                "きっぷ",
+                "かみ",
+                "カメラ"
+              ],
+              "correctOption": "かみ",
+              "explanation": "",
+              "marks": 3
+            }
+          ]
+        },
+        {
+          "id": "grp-e22e2752-8a65-494e-966c-02ed24051b82",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "e22e2752-8a65-494e-966c-02ed24051b82",
+              "question": "A : ワンさん、これ私たちからのプレゼントです。\nB : すてきなパソコンですね。ありがとうございます。＿＿＿＿＿＿。<br>🔹NihongoMockTest🔹",
+              "options": [
+                "大切にします",
+                "使いません",
+                "見ません"
+              ],
+              "correctOption": "大切にします",
+              "explanation": "",
+              "marks": 5
+            }
+          ]
+        },
+        {
+          "id": "grp-8848c0d7-f9f2-4187-8239-b1a0472acf5e",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "8848c0d7-f9f2-4187-8239-b1a0472acf5e",
+              "question": "A : 日本語の授業は大変でしたか。\nB : はい、でも＿＿＿＿＿＿、今会話はあまり問題がありません。<br>🔔NihongoMockTest🔔",
+              "options": [
+                "さようなら",
+                "おかげで",
+                "ありがと"
+              ],
+              "correctOption": "おかげで",
+              "explanation": "",
+              "marks": 5
+            }
+          ]
+        },
+        {
+          "id": "grp-01e0872d-ee1b-4c5f-a2fa-db07e3199054",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "01e0872d-ee1b-4c5f-a2fa-db07e3199054",
+              "question": "A : お先に失礼します。\nB : はい、＿＿＿＿。<br>💠NihongoMockTest💠",
+              "options": [
+                "いってらっしゃい",
+                "いってきます",
+                "いってまいります"
+              ],
+              "correctOption": "いってらっしゃい",
+              "explanation": "",
+              "marks": 5
+            }
+          ]
+        },
+        {
+          "id": "grp-e5715295-62b2-47fc-96fa-bb36b424690e",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "e5715295-62b2-47fc-96fa-bb36b424690e",
+              "question": "A : これはチャーハンですよ。どうぞ。\nB : ___________________、いただきます。<br>⬜NihongoMockTest⬜",
+              "options": [
+                "おいしそうです",
+                "まずそうです",
+                "ありがとう"
+              ],
+              "correctOption": "おいしそうです",
+              "explanation": "",
+              "marks": 5
+            }
+          ]
+        },
+        {
+          "id": "grp-b5261f72-eca1-4077-9d4b-a95f23ada562",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "b5261f72-eca1-4077-9d4b-a95f23ada562",
+              "question": "友だちが病気のとき、______________。<br>🔲NihongoMockTest🔲",
+              "options": [
+                "遊びに行きます",
+                "病院へ行きます",
+                "学校へ行きます"
+              ],
+              "correctOption": "病院へ行きます",
+              "explanation": "",
+              "marks": 5
+            }
+          ]
+        },
+        {
+          "id": "grp-17473a3b-fb57-461d-86bc-b69956b368b1",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "17473a3b-fb57-461d-86bc-b69956b368b1",
+              "question": "A : みなさん、＿＿＿＿＿＿。ベトナムのおいしいコーヒーですよ。\nB : ああ、いいにおい。いただきます。<br>◇NihongoMockTest◇",
+              "options": [
+                "お先に",
+                "おまたせしました",
+                "どうぞ"
+              ],
+              "correctOption": "おまたせしました",
+              "explanation": "",
+              "marks": 5
+            }
+          ]
+        },
+        {
+          "id": "grp-d96184c9-b706-408b-91b7-171737911e71",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "d96184c9-b706-408b-91b7-171737911e71",
+              "question": "A : すみません、このコピー機が使った＿＿＿＿＿＿。\nB : はい、あります。どうして。<br>🔰NihongoMockTest🔰",
+              "options": [
+                "ことがありますか",
+                "ことができません",
+                "ことにします"
+              ],
+              "correctOption": "ことがありますか",
+              "explanation": "",
+              "marks": 5
+            }
+          ]
+        },
+        {
+          "id": "grp-940cfb6d-16ef-4264-8c94-a28cc449481c",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "940cfb6d-16ef-4264-8c94-a28cc449481c",
+              "question": "A : アニさん、日本語の勉強はどのぐらいかかりましたか。会話がめちゃめちゃうまいね。\nB : あ。。。。。。＿＿＿＿＿、まだ4月勉強しています。<br>☆NihongoMockTest☆",
+              "options": [
+                "いえいえそんなことないよ",
+                "はい、そうです",
+                "ありがとうございます"
+              ],
+              "correctOption": "ありがとうございます",
+              "explanation": "",
+              "marks": 5
+            }
+          ]
+        },
+        {
+          "id": "grp-3858be11-792e-4c86-a2dd-9d63203cd691",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "3858be11-792e-4c86-a2dd-9d63203cd691",
+              "question": "A : うちの会社に入って、そろそろ半年だね。仕事はどう？\nB : はじめは、やり方がわからなかったけど、今は＿＿＿＿＿＿わかるようになりました。<br>🟥NihongoMockTest🟥",
+              "options": [
+                "ちょっと",
+                "だいぶ",
+                "まだ"
+              ],
+              "correctOption": "だいぶ",
+              "explanation": "",
+              "marks": 6
+            }
+          ]
+        },
+        {
+          "id": "grp-eee392ed-07d6-4639-880f-0e4359d5c0ba",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "eee392ed-07d6-4639-880f-0e4359d5c0ba",
+              "question": "A : 日本で働くために、やっぱり日本語が大変ですよ。\nB : そうですね。最初は＿＿＿＿＿＿日本語の勉強を頑張るつもりです。<br>⬛NihongoMockTest⬛",
+              "options": [
+                "とにかく",
+                "ぜんぜん",
+                "たくさん"
+              ],
+              "correctOption": "とにかく",
+              "explanation": "",
+              "marks": 6
+            }
+          ]
+        },
+        {
+          "id": "grp-edb83c5e-df35-47da-9e1b-22062eec6660",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "edb83c5e-df35-47da-9e1b-22062eec6660",
+              "question": "A : どうしてガイドの仕事を始めようと思いましたか。\nB : _____________ 、旅行が好きで、いろいろな国に興味があったんです。<br>🟡NihongoMockTest🟡",
+              "options": [
+                "もともと",
+                "ぜんぜん",
+                "とにかく"
+              ],
+              "correctOption": "もともと",
+              "explanation": "",
+              "marks": 6
+            }
+          ]
+        },
+        {
+          "id": "grp-776de11d-a6cc-4019-92c7-c0672aba7f6d",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "776de11d-a6cc-4019-92c7-c0672aba7f6d",
+              "question": "A : イベントに行ったり、趣味を始めたり、仕事以外の人と話すのも大変だよ。\nB : そうですね。ありがとうございます。＿＿＿＿＿＿。<br>🟢NihongoMockTest🟢",
+              "options": [
+                "いろいろ考えてみます",
+                "ぜんぜん分かりません",
+                "とにかく頑張ります"
+              ],
+              "correctOption": "いろいろ考えてみます",
+              "explanation": "",
+              "marks": 6
+            }
+          ]
+        },
+        {
+          "id": "grp-11b886bf-00d0-45af-90ff-917f47158f69",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": "https://pub-5c42a6ad4e5340baafebed7973ffd605.r2.dev/question-media/questions/1785356626702-1.mp3",
+          "questions": [
+            {
+              "id": "11b886bf-00d0-45af-90ff-917f47158f69",
+              "question": "女の人は何を注文しましたか。<br>🔰NihongoMockTest🔰",
+              "options": [
+                "コーヒー",
+                "ジュース",
+                "お茶"
+              ],
+              "correctOption": "お茶",
+              "explanation": "",
+              "marks": 6
+            }
+          ]
+        },
+        {
+          "id": "grp-b76c715f-334d-482b-864d-d663f873a0f2",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": "https://pub-5c42a6ad4e5340baafebed7973ffd605.r2.dev/question-media/questions/1785356671139-2.mp3",
+          "questions": [
+            {
+              "id": "b76c715f-334d-482b-864d-d663f873a0f2",
+              "question": "2. 飛行機（ひこうき）の出発時刻（しゅっぱつじこく）は何時（なんじ）ですか。<br><br>🔵NihongoMockTest🔵",
+              "options": [
+                "10:00",
+                "10:50",
+                "11:00"
+              ],
+              "correctOption": "10:50",
+              "explanation": "",
+              "marks": 6
+            }
+          ]
+        },
+        {
+          "id": "grp-dda06aad-e491-490b-a9b8-3d58b5762e8f",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "dda06aad-e491-490b-a9b8-3d58b5762e8f",
+              "question": "搭乗口（ゲート）は何番（なんばん）ですか?<br>📖NihongoMockTest📖",
+              "options": [
+                "12",
+                "16",
+                "18"
+              ],
+              "correctOption": "18",
+              "explanation": "",
+              "marks": 6
+            }
+          ]
+        },
+        {
+          "id": "grp-7ec2d65b-c919-4298-859f-88b729e8d4e5",
+          "type": "single",
+          "title": "",
+          "imageUrl": "https://pub-5c42a6ad4e5340baafebed7973ffd605.r2.dev/question-media/questions/1785512535875-1010NMT1010--1010111010-.webp",
+          "audioUrl": "https://pub-5c42a6ad4e5340baafebed7973ffd605.r2.dev/question-media/questions/1785356760037-3.mp3",
+          "questions": [
+            {
+              "id": "7ec2d65b-c919-4298-859f-88b729e8d4e5",
+              "question": "はさみと 鉛筆（えんぴつ）は どこに 置（お）きますか。<br><br>🔵NihongoMockTest🔵",
+              "options": [
+                "A",
+                "B",
+                "C"
+              ],
+              "correctOption": "A",
+              "explanation": "",
+              "marks": 6
+            }
+          ]
+        },
+        {
+          "id": "grp-73d9f54b-b609-4d47-9129-5821bc1b2a21",
+          "type": "single",
+          "title": "",
+          "imageUrl": "https://pub-5c42a6ad4e5340baafebed7973ffd605.r2.dev/question-media/questions/1785512559459-44NMT44--44544-.webp",
+          "audioUrl": "https://pub-5c42a6ad4e5340baafebed7973ffd605.r2.dev/question-media/questions/1785356873888-4.mp3",
+          "questions": [
+            {
+              "id": "73d9f54b-b609-4d47-9129-5821bc1b2a21",
+              "question": "フォークがないとき、どうしますか。<br>🔹NihongoMockTest🔹",
+              "options": [
+                "A",
+                "B",
+                "C"
+              ],
+              "correctOption": "C",
+              "explanation": "",
+              "marks": 6
+            }
+          ]
+        },
+        {
+          "id": "grp-9091900c-c828-4fc3-8e02-76b199af3cc8",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": "https://pub-5c42a6ad4e5340baafebed7973ffd605.r2.dev/question-media/questions/1785356905647-5.mp3",
+          "questions": [
+            {
+              "id": "9091900c-c828-4fc3-8e02-76b199af3cc8",
+              "question": "お客さんは何を注文しましたか。<br>📚NihongoMockTest📚",
+              "options": [
+                "おにぎり4つとサンドイッチ3つ",
+                "おにぎり3つとサンドイッチ4つ",
+                "おにぎり4つとサンドイッチ1つ"
+              ],
+              "correctOption": "おにぎり4つとサンドイッチ3つ",
+              "explanation": "",
+              "marks": 6
+            }
+          ]
+        },
+        {
+          "id": "grp-99f29f03-d9ae-4fe9-a25c-493ac3ec5aab",
+          "type": "single",
+          "title": "",
+          "imageUrl": "https://pub-5c42a6ad4e5340baafebed7973ffd605.r2.dev/question-media/questions/1785512580346-99NMT99--991099-.webp",
+          "audioUrl": "https://pub-5c42a6ad4e5340baafebed7973ffd605.r2.dev/question-media/questions/1785356940228-6.mp3",
+          "questions": [
+            {
+              "id": "99f29f03-d9ae-4fe9-a25c-493ac3ec5aab",
+              "question": "コンビニは どちらに ありますか。<br><br>📝NihongoMockTest📝",
+              "options": [
+                "A",
+                "B",
+                "C"
+              ],
+              "correctOption": "B",
+              "explanation": "",
+              "marks": 6
+            }
+          ]
+        },
+        {
+          "id": "grp-c231b605-02ab-41f0-bfa2-ec500929aa91",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": "https://pub-5c42a6ad4e5340baafebed7973ffd605.r2.dev/question-media/questions/1785356972085-7.mp3",
+          "questions": [
+            {
+              "id": "c231b605-02ab-41f0-bfa2-ec500929aa91",
+              "question": "今の天気（てんき）はどうですか?<br>🔵NihongoMockTest🔵",
+              "options": [
+                "雨",
+                "くもり",
+                "晴れ"
+              ],
+              "correctOption": "晴れ",
+              "explanation": "",
+              "marks": 6
+            }
+          ]
+        },
+        {
+          "id": "grp-dbb87324-a49d-4c60-8afd-fb217e572c3c",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": "https://pub-5c42a6ad4e5340baafebed7973ffd605.r2.dev/question-media/questions/1785356994809-8.mp3",
+          "questions": [
+            {
+              "id": "dbb87324-a49d-4c60-8afd-fb217e572c3c",
+              "question": "無料で食事がついているのは、どのチケットですか?<br>📚NihongoMockTest📚",
+              "options": [
+                "自転車のチケット",
+                "湖のチケット",
+                "漁師の家へのチケット"
+              ],
+              "correctOption": "自転車のチケット",
+              "explanation": "",
+              "marks": 6
+            }
+          ]
+        },
+        {
+          "id": "grp-3f7ab4dc-49bb-40c5-af5b-35a1efc0914c",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": "https://pub-5c42a6ad4e5340baafebed7973ffd605.r2.dev/question-media/questions/1785357013625-9.mp3",
+          "questions": [
+            {
+              "id": "3f7ab4dc-49bb-40c5-af5b-35a1efc0914c",
+              "question": "おとこのひとはなんばんのへやにいきますか。<br><br>🔶NihongoMockTest🔶",
+              "options": [
+                "325",
+                "326",
+                "320"
+              ],
+              "correctOption": "325",
+              "explanation": "",
+              "marks": 6
+            }
+          ]
+        },
+        {
+          "id": "grp-0de61e94-7cb1-4e15-95f9-77bbda15c04f",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": "https://pub-5c42a6ad4e5340baafebed7973ffd605.r2.dev/question-media/questions/1785357032584-10.mp3",
+          "questions": [
+            {
+              "id": "0de61e94-7cb1-4e15-95f9-77bbda15c04f",
+              "question": "クラスに参加するとき、何を持っていく必要がありますか。<br>🟡NihongoMockTest🟡",
+              "options": [
+                "道着だけ",
+                "お金だけ",
+                "タホル500 円"
+              ],
+              "correctOption": "タホル500 円",
+              "explanation": "",
+              "marks": 6
+            }
+          ]
+        },
+        {
+          "id": "grp-bd8e7914-a27a-4693-87de-6f2a105ceb85",
+          "type": "single",
+          "title": "",
+          "imageUrl": "https://pub-5c42a6ad4e5340baafebed7973ffd605.r2.dev/question-media/questions/1785512789708-11NMT11--11211-.webp",
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "bd8e7914-a27a-4693-87de-6f2a105ceb85",
+              "question": "Read the paragraph and answer the following 2 questions.<br>📚NihongoMockTest📚",
+              "options": [],
+              "correctOption": "",
+              "explanation": "",
+              "marks": 0
+            }
+          ]
+        },
+        {
+          "id": "grp-6ce6c918-639f-4765-ac0d-2fffbeead88a",
+          "type": "single",
+          "title": "",
+          "imageUrl": "https://pub-5c42a6ad4e5340baafebed7973ffd605.r2.dev/question-media/questions/1785512859186-33NMT33--33433-.webp",
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "6ce6c918-639f-4765-ac0d-2fffbeead88a",
+              "question": "このカードは、どんなあいさつですか。<br>🟡NihongoMockTest🟡",
+              "options": [
+                "A",
+                "B",
+                "C"
+              ],
+              "correctOption": "A",
+              "explanation": "",
+              "marks": 7
+            }
+          ]
+        },
+        {
+          "id": "grp-7ab163d1-5aba-4872-8376-79fe21cd46ee",
+          "type": "single",
+          "title": "",
+          "imageUrl": "https://pub-5c42a6ad4e5340baafebed7973ffd605.r2.dev/question-media/questions/1785512966355-1111NMT1111--1111121111-.webp",
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "7ab163d1-5aba-4872-8376-79fe21cd46ee",
+              "question": "サッカーの試合はどのチャンネルで放送しますか。<br>🔵NihongoMockTest🔵",
+              "options": [
+                "5JTV",
+                "6JTV",
+                "7JTV"
+              ],
+              "correctOption": "6JTV",
+              "explanation": "",
+              "marks": 7
+            }
+          ]
+        },
+        {
+          "id": "grp-cf3b2e9e-4471-4d27-855e-6268d4c09930",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "cf3b2e9e-4471-4d27-855e-6268d4c09930",
+              "question": "料理番組は何時からですか?<br>▶NihongoMockTest▶",
+              "options": [
+                "午前6時30分",
+                "午前7時30分",
+                "午前9時30分"
+              ],
+              "correctOption": "午前7時30分",
+              "explanation": "",
+              "marks": 7
+            }
+          ]
+        },
+        {
+          "id": "grp-1d3ea800-f913-4f22-86c7-1944e11064ec",
+          "type": "single",
+          "title": "",
+          "imageUrl": "https://pub-5c42a6ad4e5340baafebed7973ffd605.r2.dev/question-media/questions/1785513289999-00NMT00--00100-.webp",
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "1d3ea800-f913-4f22-86c7-1944e11064ec",
+              "question": "Read the paragraph and answer the following 2 questions.<br>🔸NihongoMockTest🔸",
+              "options": [],
+              "correctOption": "",
+              "explanation": "",
+              "marks": 0
+            }
+          ]
+        },
+        {
+          "id": "grp-b87c259b-fb55-41c5-a961-25849d601c14",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "b87c259b-fb55-41c5-a961-25849d601c14",
+              "question": "フェルンさんは お正月に 何をしますか?<br>🔵NihongoMockTest🔵",
+              "options": [
+                "家で休む",
+                "旅行に行く",
+                "友達と会う"
+              ],
+              "correctOption": "旅行に行く",
+              "explanation": "",
+              "marks": 7
+            }
+          ]
+        },
+        {
+          "id": "grp-81e49f3a-6352-4e62-a28d-dd302eebe3df",
+          "type": "single",
+          "title": "",
+          "imageUrl": "https://pub-5c42a6ad4e5340baafebed7973ffd605.r2.dev/question-media/questions/1785513420785-22NMT22--22322-.webp",
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "81e49f3a-6352-4e62-a28d-dd302eebe3df",
+              "question": "二人（ふたり）は 何について 話していますか?<br>📚NihongoMockTest📚",
+              "options": [
+                "A",
+                "B",
+                "C"
+              ],
+              "correctOption": "A",
+              "explanation": "",
+              "marks": 7
+            }
+          ]
+        },
+        {
+          "id": "grp-1eed9132-e9ed-4a9c-965d-f6e650ea51a9",
+          "type": "single",
+          "title": "",
+          "imageUrl": "https://pub-5c42a6ad4e5340baafebed7973ffd605.r2.dev/question-media/questions/1785513541636-88NMT88--88988-.webp",
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "1eed9132-e9ed-4a9c-965d-f6e650ea51a9",
+              "question": "Read the paragraph and answer the following 2 questions.<br>🔳NihongoMockTest🔳",
+              "options": [],
+              "correctOption": "",
+              "explanation": "",
+              "marks": 0
+            }
+          ]
+        },
+        {
+          "id": "grp-57e75142-23bd-411b-9ddb-af884c6ada26",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "57e75142-23bd-411b-9ddb-af884c6ada26",
+              "question": "休診日はいつですか。<br>🔰NihongoMockTest🔰",
+              "options": [
+                "月曜日と火曜日",
+                "水曜日と日曜日",
+                "木曜日と金曜日"
+              ],
+              "correctOption": "水曜日と日曜日",
+              "explanation": "",
+              "marks": 7
+            }
+          ]
+        },
+        {
+          "id": "grp-edf7c9d2-761e-483a-a6cc-2ae7a5ebcfc8",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "edf7c9d2-761e-483a-a6cc-2ae7a5ebcfc8",
+              "question": "土曜日は何時まで診療していますか。<br>🌟NihongoMockTest🌟",
+              "options": [
+                "16:00",
+                "17:00",
+                "18:00"
+              ],
+              "correctOption": "17:00",
+              "explanation": "",
+              "marks": 7
+            }
+          ]
+        },
+        {
+          "id": "grp-7152d1f3-9ba4-4d56-85e1-26997c255dd9",
+          "type": "single",
+          "title": "",
+          "imageUrl": "https://pub-5c42a6ad4e5340baafebed7973ffd605.r2.dev/question-media/questions/1785513649115-1313NMT1313--1313141313-.webp",
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "7152d1f3-9ba4-4d56-85e1-26997c255dd9",
+              "question": "Read the paragraph and answer the following 2 questions.<br>🔳NihongoMockTest🔳",
+              "options": [],
+              "correctOption": "",
+              "explanation": "",
+              "marks": 0
+            }
+          ]
+        },
+        {
+          "id": "grp-5c0b5c4d-7b54-4437-94a1-71caf55fb7ce",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "5c0b5c4d-7b54-4437-94a1-71caf55fb7ce",
+              "question": "ごみを 捨(す)てる 前(まえ)に、どうしなければなりませんか?<br>☑NihongoMockTest☑",
+              "options": [
+                "そのまま出す",
+                "洗(あら)わなければなりません",
+                "ごみの 出(だ)し方(かた)"
+              ],
+              "correctOption": "洗(あら)わなければなりません",
+              "explanation": "",
+              "marks": 7
+            }
+          ]
+        },
+        {
+          "id": "grp-b26c8902-4ff3-482a-8f29-e7a894a6f7b1",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "b26c8902-4ff3-482a-8f29-e7a894a6f7b1",
+              "question": "ごみについて わからないとき、どうしますか?<br>📍NihongoMockTest📍",
+              "options": [
+                "クリーンサポートに 電話を かけます",
+                "汚れたまま 出します",
+                "容器を そのまま 捨てます"
+              ],
+              "correctOption": "クリーンサポートに 電話を かけます",
+              "explanation": "",
+              "marks": 7
+            }
+          ]
+        },
+        {
+          "id": "grp-89c5dc1b-dfab-437a-8454-de7143e7c280",
+          "type": "single",
+          "title": "",
+          "imageUrl": "https://pub-5c42a6ad4e5340baafebed7973ffd605.r2.dev/question-media/questions/1785513764051-1212NMT1212--1212131212-.webp",
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "89c5dc1b-dfab-437a-8454-de7143e7c280",
+              "question": "Read the paragraph and answer the following 2 questions.<br>🔰NihongoMockTest🔰",
+              "options": [],
+              "correctOption": "",
+              "explanation": "",
+              "marks": 0
+            }
+          ]
+        },
+        {
+          "id": "grp-46d0c25c-b0ed-4795-95cf-5bec89839c25",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "46d0c25c-b0ed-4795-95cf-5bec89839c25",
+              "question": "田中さんはなぜ遅れましたか。<br>💠NihongoMockTest💠",
+              "options": [
+                "仕事が忙しかった",
+                "道に迷った",
+                "間違った電車に乗った"
+              ],
+              "correctOption": "間違った電車に乗った",
+              "explanation": "",
+              "marks": 7
+            }
+          ]
+        },
+        {
+          "id": "grp-c1975843-899e-4ed4-9aa1-2e5fef41bd20",
+          "type": "single",
+          "title": "",
+          "imageUrl": null,
+          "audioUrl": null,
+          "questions": [
+            {
+              "id": "c1975843-899e-4ed4-9aa1-2e5fef41bd20",
+              "question": "田中さんは今どこにいますか。<br>⬜NihongoMockTest⬜",
+              "options": [
+                "東の駅",
+                "南の駅",
+                "西の駅"
+              ],
+              "correctOption": "西の駅",
+              "explanation": "",
+              "marks": 7
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

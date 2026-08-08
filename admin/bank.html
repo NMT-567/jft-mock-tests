@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Question Bank | NMT Admin</title>
+<link rel="icon" href="../assets/icons/logo.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="../css/style.css?v=4" />
+<link rel="stylesheet" href="css/style.css?v=4" />
+<link rel="stylesheet" href="css/editor.css?v=9" />
+<link rel="stylesheet" href="css/bank.css?v=3" />
+<link rel="stylesheet" href="css/responsive.css?v=5" />
+</head>
+<body class="admin-body">
+  <div class="page-loader" id="pageLoader" aria-hidden="true"><div class="spinner"></div></div>
+
+  <header class="editor-toolbar">
+    <div class="editor-toolbar-inner">
+      <a href="index.html" class="icon-btn" aria-label="Back to dashboard">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </a>
+      <span class="toolbar-title-input" style="font-weight:700;">Question Bank</span>
+      <span class="save-status" id="bankCountLabel">0 questions</span>
+      <div class="toolbar-actions">
+        <button type="button" class="icon-btn" id="darkModeToggle" aria-label="Toggle dark mode">
+          <svg class="icon icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        </button>
+        <button type="button" class="btn btn-primary" id="newQuestionBtn">+ New Question</button>
+      </div>
+    </div>
+    <div class="editor-toolbar-row2">
+      <input type="search" id="bankSearchInput" class="text-input text-input-sm" placeholder="Search by ID, question text, explanation, or tag…" aria-label="Search question bank" />
+    </div>
+  </header>
+
+  <div class="bank-layout">
+    <!-- LEFT: filters -->
+    <aside class="bank-filters" id="bankFiltersPanel">
+      <div class="bank-filter-group">
+        <h3>Status</h3>
+        <div class="filter-chip-row">
+          <button type="button" class="filter-chip" data-status="bookmarked">Bookmarked</button>
+          <button type="button" class="filter-chip" data-status="favorite">Favorite</button>
+          <button type="button" class="filter-chip" data-status="unused">Unused</button>
+          <button type="button" class="filter-chip" data-status="frequent">Frequently Used (3+)</button>
+        </div>
+      </div>
+
+      <div class="bank-filter-group">
+        <h3>JLPT Level</h3>
+        <div class="filter-chip-row">
+          <button type="button" class="filter-chip" data-jlpt="N5">N5</button>
+          <button type="button" class="filter-chip" data-jlpt="N4">N4</button>
+          <button type="button" class="filter-chip" data-jlpt="N3">N3</button>
+          <button type="button" class="filter-chip" data-jlpt="N2">N2</button>
+          <button type="button" class="filter-chip" data-jlpt="N1">N1</button>
+        </div>
+      </div>
+
+      <div class="bank-filter-group">
+        <h3>Difficulty</h3>
+        <div class="filter-chip-row">
+          <button type="button" class="filter-chip" data-difficulty="easy">Easy</button>
+          <button type="button" class="filter-chip" data-difficulty="medium">Medium</button>
+          <button type="button" class="filter-chip" data-difficulty="hard">Hard</button>
+        </div>
+      </div>
+
+      <div class="bank-filter-group">
+        <h3>Section (by usage)</h3>
+        <div class="filter-chip-row">
+          <button type="button" class="filter-chip" data-section="Scripts">Scripts &amp; Vocabulary</button>
+          <button type="button" class="filter-chip" data-section="Conversation">Conversation &amp; Expression</button>
+          <button type="button" class="filter-chip" data-section="Listening">Listening</button>
+          <button type="button" class="filter-chip" data-section="Reading">Reading</button>
+        </div>
+      </div>
+
+      <div class="bank-filter-group">
+        <h3>Question Type (by usage)</h3>
+        <div class="filter-chip-row">
+          <button type="button" class="filter-chip" data-type="single">Single</button>
+          <button type="button" class="filter-chip" data-type="passage_group">Passage</button>
+          <button type="button" class="filter-chip" data-type="conversation_group">Conversation</button>
+          <button type="button" class="filter-chip" data-type="listening_group">Listening</button>
+          <button type="button" class="filter-chip" data-type="image_group">Image</button>
+        </div>
+      </div>
+
+      <div class="bank-filter-group">
+        <h3>Tags</h3>
+        <div class="filter-chip-row" id="bankTagFilterRow"></div>
+      </div>
+
+      <button type="button" class="btn btn-ghost btn-block" id="clearFiltersBtn">Clear all filters</button>
+    </aside>
+
+    <!-- CENTER: question list -->
+    <main class="bank-list-panel" id="bankListPanel"></main>
+  </div>
+
+  <dialog id="deleteWarningModal" class="modal">
+    <div class="modal-body">
+      <h2>This question is still in use</h2>
+      <p id="deleteWarningText"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="cancelDeleteBtn">Cancel</button>
+        <button type="button" class="btn btn-primary" id="confirmDeleteAnywayBtn" style="background: var(--color-danger);">Delete Anyway</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script type="module" src="js/bank.js?v=5"></script>
+</body>
+</html>

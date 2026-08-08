@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Exam in Progress | NMT CBT</title>
+<link rel="icon" href="assets/icons/logo.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="css/style.css?v=4" />
+<link rel="stylesheet" href="css/exam.css?v=6" />
+<link rel="stylesheet" href="css/responsive.css?v=3" />
+</head>
+<body class="exam-body no-select">
+  <div class="print-redacted-message">This content is not available for printing during an active exam.</div>
+  <div class="page-loader" id="pageLoader" aria-hidden="true">
+    <div class="spinner"></div>
+  </div>
+
+  <div class="admin-test-mode-banner no-print" id="adminTestModeBanner" hidden>ADMIN TEST MODE — this attempt is not saved as a real student result</div>
+
+  <!-- STICKY TOP BAR: section + progress + timer -->
+  <header class="exam-topbar">
+    <div class="exam-topbar-inner">
+      <span class="exam-progress-text" id="examProgressText">Question 1 / 1</span>
+      <div class="timer" id="timerDisplay" role="timer" aria-label="Time remaining">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+        <span id="timerText">00:00:00</span>
+      </div>
+    </div>
+    <div class="progress-bar-track"><div class="progress-bar-fill" id="progressBarFill"></div></div>
+  </header>
+
+  <div class="exam-util-row">
+    <span class="exam-test-title" id="examTestTitle">Mock Test</span>
+    <span class="exam-mode-indicator no-print" id="examModeIndicator" hidden>🔒 Exam Mode</span>
+    <div class="exam-util-actions">
+      <button type="button" class="icon-btn icon-btn-sm" id="fullscreenBtn" aria-label="Toggle fullscreen">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+      </button>
+      <button type="button" class="icon-btn icon-btn-sm" id="examDarkModeToggle" aria-label="Toggle dark mode">
+        <svg class="icon icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- SECTION PROGRESS — persistent, informational only (never clickable to jump back; locked/current/upcoming states only) -->
+  <nav class="exam-section-progress" id="examSectionProgress" aria-label="Section progress"></nav>
+
+  <!-- SECTION BANNER: shown once, whenever the current group starts a new section -->
+  <div class="section-banner" id="sectionBanner" hidden>
+    <span class="section-banner-index" id="sectionBannerIndex">Section 1 of 4</span>
+    <h1 class="section-banner-title" id="sectionBannerTitle">Scripts &amp; Vocabulary</h1>
+  </div>
+
+  <!-- MAIN GROUP AREA — fully populated by exam.js, varies by group type -->
+  <main class="exam-main">
+    <div id="groupContent"></div>
+  </main>
+
+  <!-- FIXED BOTTOM NAVIGATION — moves between GROUPS, not individual questions -->
+  <nav class="bottom-nav" aria-label="Exam navigation">
+    <button type="button" class="bottom-nav-btn" id="prevBtn" aria-label="Previous group">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      <span>Previous</span>
+    </button>
+    <button type="button" class="bottom-nav-btn" id="paletteToggleBtn" aria-label="Open question palette" aria-haspopup="dialog" aria-expanded="false">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      <span>Palette</span>
+    </button>
+    <button type="button" class="bottom-nav-btn" id="nextBtn" aria-label="Next group">
+      <span id="nextBtnLabel">Next</span>
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+  </nav>
+
+  <!-- QUESTION PALETTE — BOTTOM SHEET -->
+  <div class="sheet-backdrop" id="sheetBackdrop" hidden></div>
+  <div class="palette-sheet" id="paletteSheet" role="dialog" aria-modal="true" aria-label="Question palette" hidden>
+    <div class="sheet-drag-handle" id="sheetDragHandle"><span></span></div>
+
+    <div class="palette-search">
+      <input type="search" id="questionSearchInput" class="text-input text-input-sm" placeholder="Jump to question #" aria-label="Jump to question number" />
+    </div>
+
+    <div class="palette-legend">
+      <span class="legend-item"><i class="legend-dot legend-not-visited"></i> Not Visited</span>
+      <span class="legend-item"><i class="legend-dot legend-visited"></i> Visited</span>
+      <span class="legend-item"><i class="legend-dot legend-answered"></i> Answered</span>
+      <span class="legend-item"><i class="legend-dot legend-bookmarked"></i> Bookmarked</span>
+    </div>
+
+    <div class="palette-grid" id="paletteGrid" role="group" aria-label="Question palette"></div>
+
+    <div class="palette-summary">
+      <div><strong id="summaryAnswered">0</strong> Answered</div>
+      <div><strong id="summaryUnanswered">0</strong> Unanswered</div>
+      <div><strong id="summaryBookmarked">0</strong> Bookmarked</div>
+    </div>
+  </div>
+
+  <!-- SUBMIT CONFIRMATION — only ever reached at the very end of the final section -->
+  <dialog id="submitConfirmModal" class="modal">
+    <div class="modal-body">
+      <h2>Submit your exam?</h2>
+      <p>You have completed all 4 sections. After submission, your answers cannot be changed.</p>
+      <div class="submit-summary-grid">
+        <div class="submit-summary-box answered">
+          <span class="submit-summary-value" id="confirmAnswered">0</span>
+          <span class="submit-summary-label">Answered</span>
+        </div>
+        <div class="submit-summary-box unanswered">
+          <span class="submit-summary-value" id="confirmUnanswered">0</span>
+          <span class="submit-summary-label">Unanswered</span>
+        </div>
+        <div class="submit-summary-box bookmarked">
+          <span class="submit-summary-value" id="confirmBookmarked">0</span>
+          <span class="submit-summary-label">Bookmarked</span>
+        </div>
+      </div>
+      <div class="required-warning" id="requiredWarning" hidden>
+        <p class="required-warning-message">Please answer all required questions before submitting.</p>
+        <div class="required-warning-list" id="requiredWarningList"></div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="cancelSubmitBtn">Continue Test</button>
+        <button type="button" class="btn btn-primary" id="confirmSubmitBtn">Submit Exam</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- SUBMIT FAILED — shown when submit-attempt (server) fails; blocking, retry-only, never a fabricated local score for a real student (see js/exam.js's submitTest()) -->
+  <dialog id="submitFailedModal" class="modal">
+    <div class="modal-body">
+      <h2>Couldn't submit</h2>
+      <p id="submitFailedMessage">Your exam couldn't be submitted — please check your internet connection. Your answers are saved; do not close this tab.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-primary" id="retrySubmitBtn">Retry</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- SECTION COMPLETE CONFIRMATION — the one-way gate; confirming here permanently locks the current section -->
+  <dialog id="sectionCompleteModal" class="modal">
+    <div class="modal-body">
+      <h2>Complete this section?</h2>
+      <p>You are about to finish:</p>
+      <p class="section-complete-name" id="sectionCompleteName">Scripts &amp; Vocabulary</p>
+      <p class="section-complete-warning">After continuing, you cannot return to this section.</p>
+      <p>Are you sure you want to continue?</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="stayInSectionBtn">Stay in Section</button>
+        <button type="button" class="btn btn-primary" id="continueToNextSectionBtn">Continue →</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- SECTION INCOMPLETE WARNING — blocks advancing while required questions remain unanswered -->
+  <dialog id="sectionIncompleteModal" class="modal">
+    <div class="modal-body">
+      <h2>⚠ Complete this section</h2>
+      <p id="sectionIncompleteMessage">You still have required questions unanswered.</p>
+      <p>Please answer all required questions before continuing.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-primary" id="sectionIncompleteGoBackBtn">Go Back</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- SECTION TRANSITION — brief, non-interactive; disappears on its own -->
+  <div class="section-transition-overlay no-print" id="sectionTransitionOverlay" hidden aria-live="polite">
+    <div class="section-transition-check">✓</div>
+    <p class="section-transition-label">Section Complete</p>
+    <p class="section-transition-name" id="sectionTransitionFromName"></p>
+    <p class="section-transition-arrow" id="sectionTransitionArrowRow" hidden>→ <span id="sectionTransitionToName"></span></p>
+  </div>
+
+  <!-- EXAM START NOTICE — shown before the exam begins; this is also the direct user gesture the browser needs to reliably grant fullscreen (a fullscreen request made later, outside a click, is often silently denied) -->
+  <dialog id="examStartNoticeModal" class="modal">
+    <div class="modal-body">
+      <h2>🔒 Exam Mode</h2>
+      <p>During the exam:</p>
+      <ul class="exam-start-notice-list" id="examStartNoticeList"></ul>
+      <p style="font-size:0.8rem;color:var(--color-text-muted);">Exam security controls are enabled. Some operating-system features such as screenshots and screen recording may not be fully controllable by a web browser.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-primary" id="startExamBtn">Start Exam</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- SECURITY TOASTS — small, auto-dismissing, never an alert() -->
+  <div class="security-toast-container no-print" id="securityToastContainer" aria-live="polite"></div>
+
+  <!-- SECURITY: fullscreen-exit warning -->
+  <div class="security-banner" id="fullscreenWarningBanner" hidden>
+    <span>You exited fullscreen mode. Please return to fullscreen to continue your exam.</span>
+    <button type="button" class="btn btn-primary btn-sm" id="reenterFullscreenBtn">Re-enter Fullscreen</button>
+  </div>
+
+  <!-- SECURITY: devtools warning -->
+  <dialog id="devtoolsWarningModal" class="modal">
+    <div class="modal-body">
+      <h2>Developer Tools Detected</h2>
+      <p id="devtoolsWarningText">Developer tools were detected. This is not permitted during the exam. Continued use may end your session automatically.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-primary" id="devtoolsWarningDismissBtn">I Understand</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- SECURITY: tab-visibility violation warning -->
+  <dialog id="visibilityWarningModal" class="modal modal-sm">
+    <div class="modal-body">
+      <h2>Warning</h2>
+      <p id="visibilityWarningText">Leaving the exam window is discouraged.<br />Violation: 1 of 3.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-primary" id="visibilityWarningDismissBtn">OK</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script type="module" src="js/exam.js?v=14"></script>
+</body>
+</html>

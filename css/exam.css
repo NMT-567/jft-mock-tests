@@ -1,0 +1,559 @@
+/* =========================================================
+   EXAM BODY — mobile-first base
+   ========================================================= */
+.exam-body {
+  background: var(--color-bg);
+  padding-bottom: calc(var(--bottom-nav-height) + 12px);
+  min-height: 100vh;
+}
+
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+.no-select img { -webkit-user-drag: none; }
+
+.admin-test-mode-banner {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  text-align: center;
+  padding: 6px 12px;
+  background: var(--color-warning);
+  color: #1a1200;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+}
+
+/* =========================================================
+   STICKY TOP BAR — question progress + timer only
+   ========================================================= */
+.exam-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+.exam-topbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+}
+.exam-progress-text {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--color-text);
+}
+
+.timer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-surface-alt);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  font-size: 0.95rem;
+}
+.timer .icon { width: 16px; height: 16px; }
+.timer.timer-warning { background: var(--color-warning-light); color: var(--color-warning); border-color: var(--color-warning); }
+.timer.timer-danger { background: var(--color-danger-light); color: var(--color-danger); border-color: var(--color-danger); animation: pulse 1s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+.progress-bar-track { height: 4px; background: var(--color-gray-light); overflow: hidden; }
+.progress-bar-fill { height: 100%; width: 0%; background: var(--color-primary); transition: width var(--transition-base); }
+
+/* Compact secondary row: test title + fullscreen/theme toggles */
+.exam-util-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  gap: 10px;
+}
+.exam-test-title {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.exam-util-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.icon-btn-sm { width: 36px; height: 36px; min-height: 36px; }
+
+/* =========================================================
+   SECTION BANNER — shown once whenever the current group
+   starts a new section (real-CBT-style section headers).
+   ========================================================= */
+.section-banner {
+  text-align: center;
+  padding: 18px 16px 8px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.section-banner-index {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  padding: 4px 14px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+}
+.section-banner-title { font-size: 1.3rem; font-weight: 800; margin: 0; }
+
+/* =========================================================
+   PERSISTENT SECTION PROGRESS — informational only, never
+   clickable. Completed = locked/done, current = highlighted,
+   upcoming = visibly inert. Horizontally scrollable on mobile
+   rather than wrapping, per spec.
+   ========================================================= */
+.exam-section-progress {
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.exam-section-progress-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: default; /* never clickable — informational only, per spec */
+}
+.exam-section-progress-item.completed { color: var(--color-success); background: var(--color-success-light); }
+.exam-section-progress-item.current { color: var(--color-primary-dark); background: var(--color-primary-light); font-weight: 800; }
+.exam-section-progress-item.upcoming { color: var(--color-text-muted); background: var(--color-gray-light); opacity: 0.7; }
+.exam-section-progress-glyph { font-size: 0.8rem; }
+
+/* =========================================================
+   SECTION COMPLETE / INCOMPLETE MODAL TEXT
+   ========================================================= */
+.section-complete-name { font-size: 1.1rem; font-weight: 800; text-align: center; margin: 8px 0; }
+.section-complete-warning { color: var(--color-danger); font-weight: 600; font-size: 0.9rem; }
+
+/* =========================================================
+   SECTION TRANSITION OVERLAY — brief, non-interactive
+   ========================================================= */
+.section-transition-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--color-bg);
+  opacity: 0;
+  transition: opacity 200ms ease;
+  text-align: center;
+  padding: 20px;
+}
+.section-transition-overlay.visible { opacity: 1; }
+.section-transition-check {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--color-success-light);
+  color: var(--color-success);
+  font-size: 1.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+.section-transition-label { font-weight: 700; color: var(--color-text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; margin: 0; }
+.section-transition-name { font-size: 1.3rem; font-weight: 800; margin: 0; }
+.section-transition-arrow { color: var(--color-text-muted); font-size: 1rem; margin: 4px 0 0; }
+.section-transition-arrow span { color: var(--color-text); font-weight: 700; }
+
+/* =========================================================
+   GROUP CONTENT — shared passage/conversation/media block,
+   followed by one or more stacked question blocks.
+   ========================================================= */
+.group-shared-block {
+  margin: 0 auto 18px;
+  max-width: 720px;
+  padding: 0 16px;
+}
+.group-shared-title { font-size: 1.05rem; font-weight: 700; margin: 0 0 10px; }
+
+.group-media-wrap {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  margin-bottom: 14px;
+}
+.group-media-wrap img { width: 100%; pointer-events: none; }
+.group-audio-wrap audio { width: 100%; margin-bottom: 14px; }
+
+.conversation-block { display: flex; flex-direction: column; gap: 10px; margin-bottom: 4px; }
+.conversation-line {
+  background: var(--color-surface-alt);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  max-width: 88%;
+}
+.conversation-line.speaker-b { align-self: flex-end; background: var(--color-primary-light); }
+.conversation-speaker-name { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--color-text-muted); margin-bottom: 4px; }
+.conversation-speaker-name-b { color: var(--color-primary-dark); }
+
+.question-block-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 16px 16px;
+}
+
+.group-completion-hint {
+  max-width: 720px;
+  margin: 0 auto 12px;
+  padding: 0 16px;
+  color: var(--color-warning);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* =========================================================
+   MAIN QUESTION AREA
+   ========================================================= */
+.exam-main {
+  padding: 4px 0 16px;
+}
+
+.question-card { padding: 20px; }
+.question-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.question-index-badge {
+  background: var(--color-primary);
+  color: #fff;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+}
+.question-header-actions { display: flex; align-items: center; gap: 14px; }
+.question-marks { font-size: 0.85rem; color: var(--color-text-muted); font-weight: 600; }
+
+.bookmark-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  padding: 8px;
+  min-width: var(--touch-target-min);
+  min-height: var(--touch-target-min);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: color var(--transition-fast), transform var(--transition-fast);
+}
+.bookmark-btn:active { transform: scale(0.92); }
+.bookmark-btn[aria-pressed="true"] { color: var(--color-warning); }
+.bookmark-btn[aria-pressed="true"] svg { fill: var(--color-warning); }
+
+.question-passage {
+  background: var(--color-surface-alt);
+  border-left: 4px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+  white-space: pre-wrap;
+}
+
+.question-text {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+.question-image-wrap {
+  margin-bottom: 16px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+.question-image-wrap img { width: 100%; pointer-events: none; }
+
+.question-audio-wrap { margin-bottom: 16px; }
+.question-audio-wrap audio { width: 100%; }
+
+/* Large, touch-friendly option cards */
+.options-list { display: flex; flex-direction: column; gap: 12px; }
+.option-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  min-height: var(--touch-target-min);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+.option-item.selected { border-color: var(--color-primary); background: var(--color-primary-light); }
+.option-item input[type="radio"] {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--color-primary);
+  flex-shrink: 0;
+}
+.option-item label { flex: 1; cursor: pointer; font-size: 1rem; line-height: 1.4; }
+
+/* =========================================================
+   FIXED BOTTOM NAVIGATION
+   ========================================================= */
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--bottom-nav-height);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  z-index: 70;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+.bottom-nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: none;
+  border: none;
+  color: var(--color-text);
+  font-size: 0.72rem;
+  font-weight: 600;
+  min-height: var(--touch-target-min);
+}
+.bottom-nav-btn .icon { width: 20px; height: 20px; }
+.bottom-nav-btn:active { background: var(--color-surface-alt); }
+.bottom-nav-btn:disabled { opacity: 0.4; }
+.bottom-nav-btn-submit { color: var(--color-danger); }
+
+/* =========================================================
+   PALETTE — BOTTOM SHEET
+   ========================================================= */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 20, 32, 0.5);
+  z-index: 80;
+}
+
+.palette-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 90;
+  background: var(--color-surface);
+  border-radius: 20px 20px 0 0;
+  box-shadow: var(--shadow-lg);
+  padding: 8px 20px calc(20px + env(safe-area-inset-bottom, 0));
+  max-height: 78vh;
+  overflow-y: auto;
+  transform: translateY(100%);
+  transition: transform var(--transition-base);
+}
+.palette-sheet.open { transform: translateY(0); }
+.sheet-backdrop:not([hidden]) { display: block; }
+
+.sheet-drag-handle {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0 14px;
+  touch-action: none;
+  cursor: grab;
+}
+.sheet-drag-handle span {
+  width: 40px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--color-border);
+}
+
+.palette-search { margin-bottom: 14px; }
+
+.palette-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  margin-bottom: 14px;
+}
+.legend-item { display: flex; align-items: center; gap: 5px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.legend-not-visited { background: var(--color-gray); }
+.legend-visited { background: #eab308; }
+.legend-answered { background: var(--color-success); }
+.legend-bookmarked { background: var(--color-warning); border: 2px solid var(--color-warning); }
+
+.palette-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  padding-bottom: 4px;
+}
+.palette-item {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  border: none;
+  background: var(--color-gray);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  position: relative;
+}
+.palette-item.status-visited { background: #eab308; }
+.palette-item.status-answered { background: var(--color-success); }
+.palette-item.current { box-shadow: 0 0 0 3px var(--color-primary); }
+.palette-item.bookmarked::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-warning);
+  border: 2px solid var(--color-surface);
+}
+
+.palette-summary {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+.palette-summary strong { display: block; font-size: 1.05rem; color: var(--color-text); }
+
+/* =========================================================
+   SECURITY OVERLAYS
+   ========================================================= */
+.security-banner {
+  position: fixed;
+  top: var(--header-height);
+  left: 12px;
+  right: 12px;
+  z-index: 95;
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.85rem;
+  flex-wrap: wrap;
+  box-shadow: var(--shadow-md);
+}
+.btn-sm { padding: 8px 14px; font-size: 0.82rem; min-height: 36px; }
+
+/* =========================================================
+   PRINT REDACTION — Ctrl+P is already intercepted as a keyboard
+   shortcut, but printing can also be triggered via the browser's
+   own menu, which JS cannot block. This is the fallback: if a
+   print actually happens, none of the real exam content ever
+   reaches the printed page, only a plain notice explaining why.
+   ========================================================= */
+.print-redacted-message { display: none; }
+@media print {
+  body.exam-body > *:not(.print-redacted-message) { display: none !important; }
+  .print-redacted-message {
+    display: block !important;
+    padding: 60px 20px;
+    text-align: center;
+    font-size: 1.1rem;
+    color: #000;
+  }
+}
+
+/* =========================================================
+   EXAM MODE INDICATOR — small, non-distracting status pill
+   ========================================================= */
+.exam-mode-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--color-gray-light);
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+/* =========================================================
+   SECURITY TOAST — small, auto-dismissing, never an alert()
+   ========================================================= */
+.security-toast-container {
+  position: fixed;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 250;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  pointer-events: none;
+}
+.security-toast {
+  background: rgba(20, 20, 20, 0.92);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+.security-toast.visible { opacity: 1; transform: translateY(0); }
+
+/* =========================================================
+   EXAM START NOTICE — shown before the exam actually begins
+   ========================================================= */
+.exam-start-notice-list { text-align: left; margin: 12px 0; padding-left: 4px; list-style: none; }
+.exam-start-notice-list li { padding: 4px 0; font-size: 0.9rem; }

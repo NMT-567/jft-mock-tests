@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Import JSON | NMT Admin</title>
+<link rel="icon" href="../assets/icons/logo.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="../css/style.css?v=4" />
+<link rel="stylesheet" href="css/style.css?v=4" />
+<link rel="stylesheet" href="css/import.css?v=1" />
+<link rel="stylesheet" href="css/responsive.css?v=5" />
+</head>
+<body>
+  <div class="page-loader" id="pageLoader" aria-hidden="true"><div class="spinner"></div></div>
+
+  <header class="topbar">
+    <div class="topbar-inner container">
+      <a href="index.html" class="icon-btn" aria-label="Back to dashboard">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </a>
+      <div class="brand">
+        <img src="../assets/icons/logo.svg" alt="" class="brand-logo" />
+        <span class="brand-name">Import JSON</span>
+      </div>
+      <button id="darkModeToggle" class="icon-btn" type="button" aria-label="Toggle dark mode">
+        <svg class="icon icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="container import-main">
+
+    <!-- STEP INDICATOR -->
+    <div class="import-steps" id="importSteps">
+      <span class="import-step active" data-step="upload">1. Upload</span>
+      <span class="import-step" data-step="preview">2. Preview</span>
+      <span class="import-step" data-step="success">3. Success</span>
+    </div>
+
+    <!-- STEP: UPLOAD + VALIDATE -->
+    <section class="import-panel" id="uploadStep">
+      <h1 class="import-panel-title">Import a Mock Test JSON</h1>
+      <p class="import-panel-desc">Upload a Selected_Mock_Tests.json export — including passage/reading groups — and preview exactly what will be created before anything is saved.</p>
+
+      <div class="import-drop-zone" id="importDropZone">
+        <p>Click to choose a file, or drag it here.</p>
+      </div>
+      <input type="file" id="importFileInput" accept="application/json,.json" hidden />
+
+      <div class="import-validation-errors" id="validationErrors" hidden>
+        <h3>This file can't be imported yet:</h3>
+        <ul class="validation-error-list" id="validationErrorList"></ul>
+      </div>
+    </section>
+
+    <!-- STEP: PREVIEW -->
+    <section class="import-panel" id="previewStep" hidden>
+      <h1 class="import-panel-title">Preview Import</h1>
+      <p class="import-panel-desc" id="previewFileName"></p>
+
+      <div class="stat-grid import-stat-grid" id="previewStatGrid"></div>
+
+      <h3 class="import-subheading">By Section</h3>
+      <div class="import-section-breakdown" id="previewSectionBreakdown"></div>
+
+      <div id="previewWarningsBlock" hidden>
+        <h3 class="import-subheading">Notes</h3>
+        <ul class="import-note-list" id="previewWarningsList"></ul>
+      </div>
+
+      <div id="previewImageConflictsBlock" hidden>
+        <h3 class="import-subheading">⚠ Can't attach these images per-question</h3>
+        <p class="import-panel-desc">This project's schema allows one shared image per passage group. These questions have their own separate image in the source, in addition to the group's — the group's shared image is kept; each question's own extra image below is not attached anywhere and will show as a data-loss item in the final report.</p>
+        <ul class="import-note-list" id="previewImageConflictsList"></ul>
+      </div>
+
+      <div id="previewCollisionsBlock" hidden>
+        <h3 class="import-subheading">Already in your Question Bank</h3>
+        <ul class="import-note-list" id="previewCollisionsList"></ul>
+        <div class="dialog-radio-list" id="duplicateResolutionOptions">
+          <label class="dialog-radio-option">
+            <input type="radio" name="duplicateResolution" value="use-existing" checked />
+            <span>Use Existing — keep the current Question Bank entry as-is for these ids</span>
+          </label>
+          <label class="dialog-radio-option">
+            <input type="radio" name="duplicateResolution" value="create-copy" />
+            <span>Create Copy — import these as new Question Bank entries with new ids</span>
+          </label>
+        </div>
+      </div>
+
+      <div id="previewAmbiguousBlock" hidden>
+        <h3 class="import-subheading">Flagged for manual review</h3>
+        <p class="import-panel-desc">These had no strong signal for which section they belong in — assigned by best guess, worth a quick check after import.</p>
+        <ul class="import-note-list" id="previewAmbiguousList"></ul>
+      </div>
+
+      <h3 class="import-subheading">Import As</h3>
+      <div class="dialog-radio-list" id="importModeOptions">
+        <label class="dialog-radio-option">
+          <input type="radio" name="importMode" value="new" checked />
+          <span>Import as New Test</span>
+        </label>
+        <label class="dialog-radio-option">
+          <input type="radio" name="importMode" value="replace" />
+          <span>Replace Existing Test</span>
+        </label>
+      </div>
+      <div class="dialog-radio-list" id="replaceTargetList" hidden></div>
+
+      <div class="modal-actions import-actions">
+        <button type="button" class="btn btn-secondary" id="previewCancelBtn">Cancel</button>
+        <button type="button" class="btn btn-primary" id="previewImportBtn">Import</button>
+      </div>
+    </section>
+
+    <!-- STEP: SUCCESS -->
+    <section class="import-panel" id="successStep" hidden>
+      <h1 class="import-panel-title">✓ Import Complete</h1>
+
+      <div class="import-report-columns">
+        <div class="import-report-col">
+          <h3 class="import-subheading">Source</h3>
+          <ul class="import-report-list" id="sourceReportList"></ul>
+        </div>
+        <div class="import-report-col">
+          <h3 class="import-subheading">Imported</h3>
+          <ul class="import-report-list" id="importedReportList"></ul>
+        </div>
+      </div>
+
+      <p class="import-report-line" id="dataLossLine"></p>
+      <p class="import-report-line" id="duplicatesLine"></p>
+
+      <div id="mismatchBlock" hidden>
+        <h3 class="import-subheading">⚠ Fields that didn't match after import</h3>
+        <ul class="import-note-list" id="mismatchList"></ul>
+      </div>
+
+      <div id="successAmbiguousBlock" hidden>
+        <h3 class="import-subheading">Requires manual section review</h3>
+        <ul class="import-note-list" id="successAmbiguousList"></ul>
+      </div>
+
+      <div class="modal-actions import-actions">
+        <a href="index.html" class="btn btn-secondary">Back to Dashboard</a>
+        <button type="button" class="btn btn-primary" id="openImportedTestBtn">Open Imported Test</button>
+      </div>
+    </section>
+
+  </main>
+
+  <script type="module" src="js/importPage.js?v=2"></script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+/* =========================================================
+   DASHBOARD
+   ========================================================= */
+@media (max-width: 900px) {
+  .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .recent-test-row { flex-direction: column; align-items: flex-start; }
+  .recent-test-actions { width: 100%; }
+  .recent-test-actions .btn { flex: 1; }
+}
+
+/* =========================================================
+   EDITOR — 3-column on desktop; tablet keeps all 3 columns,
+   just narrower (sidebar + preview shrink, editor keeps the
+   remaining space); below 900px collapses to a single column
+   with an explicit [Edit]/[Preview] toggle swapping the main
+   content area (not an overlay) — the sidebar/outline stays
+   an off-canvas drawer via the existing hamburger toggle.
+   ========================================================= */
+/* =========================================================
+   EDITOR — 3-column on desktop; tablet keeps all 3 columns,
+   just narrower (sidebar + preview shrink, editor keeps the
+   remaining space); below 850px collapses to a single column
+   with an explicit [Edit]/[Preview] toggle swapping the main
+   content area (not an overlay) — the sidebar/outline stays
+   an off-canvas drawer via the existing hamburger toggle.
+   Breakpoints (1100/850) match the latest spec's own numbers.
+   ========================================================= */
+@media (max-width: 1100px) {
+  .editor-layout { grid-template-columns: 200px minmax(420px, 1fr) 280px; }
+}
+
+@media (max-width: 850px) {
+  .admin-body { --editor-toolbar-total-height: 172px; }
+  .editor-layout { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+
+  .editor-sidebar {
+    position: fixed;
+    top: var(--editor-toolbar-total-height);
+    bottom: 0;
+    left: 0;
+    width: 300px;
+    max-width: 84vw;
+    z-index: 55;
+    transform: translateX(-100%);
+    transition: transform var(--transition-base);
+    box-shadow: var(--shadow-lg);
+  }
+  .editor-sidebar.open { transform: translateX(0); }
+  .mobile-panel-toggle { display: flex; }
+
+  /* Edit/Preview are two full-width views of the same content
+     area now, not a sidebar + an overlay sheet — exactly one is
+     visible at a time, swapped by the tab bar below the section
+     tabs. No independent "preview toggle" floating button needed
+     here (the mobilePreviewToggle button used above 900px is
+     replaced by this tab bar). */
+  .mobile-edit-preview-tabs { display: flex; }
+  .editor-preview-pane { display: none; border-left: none; }
+  .mobile-showing-preview .editor-form-panel { display: none; }
+  .mobile-showing-preview .editor-preview-pane { display: flex; }
+  .editor-form-panel { padding: 16px 16px 90px; }
+}
+
+@media (max-width: 640px) {
+  .editor-toolbar-inner { gap: 8px; padding: 0 10px; }
+  .toolbar-title-input { font-size: 0.92rem; }
+  .save-status { display: none; }
+  .toolbar-actions .btn { padding: 8px 12px; font-size: 0.8rem; }
+
+  .field-row { grid-template-columns: 1fr; }
+  .form-section-title { font-size: 1.05rem; }
+
+  .floating-save-btn span { display: none; }
+  .floating-save-btn { padding: 12px; }
+}

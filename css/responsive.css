@@ -1,0 +1,84 @@
+/* =========================================================
+   Base styles across the app already target mobile
+   (360-430px). Everything below only SCALES UP for larger
+   viewports — no structural/layout changes on desktop for
+   the exam screen (same bottom nav + bottom-sheet palette,
+   just more breathing room), per spec: "Desktop should
+   simply scale up."
+   ========================================================= */
+
+/* =========================================================
+   HOME / RESULT / REVIEW — wider cards on tablet+
+   ========================================================= */
+@media (min-width: 640px) {
+  .card { padding: 32px; }
+  .cta-row { flex-direction: row; }
+  .cta-row .btn { width: auto; }
+  .result-actions { flex-direction: row; justify-content: center; }
+  .result-actions .btn { width: auto; }
+}
+
+@media (min-width: 900px) {
+  .stat-grid { gap: 16px; }
+}
+
+/* =========================================================
+   EXAM SCREEN — scale up, same structure
+   ========================================================= */
+@media (min-width: 600px) {
+  .exam-main { padding-top: 12px; }
+  .question-card { padding: 28px; }
+  .question-text { font-size: 1.25rem; }
+  .options-list { gap: 14px; }
+  .option-item { padding: 18px 20px; }
+
+  .bottom-nav-btn span { font-size: 0.8rem; }
+
+  .palette-sheet { max-width: 480px; left: 50%; transform: translate(-50%, 100%); border-radius: 20px 20px 0 0; }
+  .palette-sheet.open { transform: translate(-50%, 0); }
+  .palette-grid { grid-template-columns: repeat(6, 1fr); }
+}
+
+@media (min-width: 900px) {
+  .exam-main { max-width: 760px; }
+  .exam-topbar-inner { max-width: 900px; margin: 0 auto; width: 100%; }
+  .exam-util-row { max-width: 900px; margin: 0 auto; width: 100%; }
+  .bottom-nav { max-width: 900px; left: 50%; transform: translateX(-50%); border-radius: 16px 16px 0 0; border-left: 1px solid var(--color-border); border-right: 1px solid var(--color-border); }
+  .palette-grid { grid-template-columns: repeat(8, 1fr); }
+}
+
+/* =========================================================
+   VERY NARROW PHONES (<= 360px) — tighten spacing slightly
+   ========================================================= */
+@media (max-width: 360px) {
+  .exam-main { padding: 4px 10px 12px; }
+  .question-card { padding: 14px; }
+  .question-text { font-size: 1.05rem; }
+  .option-item { padding: 12px; }
+  .bottom-nav-btn span { font-size: 0.65rem; }
+  .palette-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* =========================================================
+   HOME PAGE mobile polish
+   ========================================================= */
+@media (max-width: 480px) {
+  .home-title { font-size: 1.25rem; }
+  .stat-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+}
+
+/* =========================================================
+   RESULT PAGE mobile polish
+   ========================================================= */
+@media (max-width: 480px) {
+  .result-hero { flex-direction: column; text-align: center; }
+  .result-hero-right { text-align: center; }
+  .result-stat-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* =========================================================
+   REVIEW PAGE mobile polish
+   ========================================================= */
+@media (max-width: 480px) {
+  .review-toolbar { flex-direction: column; align-items: stretch; }
+}
