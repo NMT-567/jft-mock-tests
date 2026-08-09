@@ -6,7 +6,7 @@
  * highlighted) — a single source of truth so the admin's live preview can
  * never visually drift from what students actually see.
  */
-import { renderRichText, escapeHtml } from "./utils.js?v=4";
+import { renderRichText, escapeHtml } from "./utils.js?v=5";
 
 /** Build the shared passage/conversation/media block for a group, or null for "single". */
 export function buildSharedBlock(group) {
@@ -41,6 +41,16 @@ export function buildSharedBlock(group) {
     audio.controls = true;
     audio.preload = "auto";
     audio.src = group.audioUrl;
+    // controlsList="nodownload" hides the browser's native "⋮" menu's
+    // download option (Chromium). This is a real attribute the audio
+    // element itself reads, not something interceptable via a
+    // contextmenu/right-click listener — the "⋮" menu is the browser's
+    // own internal control-bar UI, not a page-level context menu, so
+    // Session 14's existing right-click/copy blocking never applied to
+    // it and couldn't have. disableRemotePlayback also hides the
+    // cast-to-device option, another way media could leave the page.
+    audio.setAttribute("controlslist", "nodownload");
+    audio.disableRemotePlayback = true;
     audioWrap.appendChild(audio);
     wrap.appendChild(audioWrap);
   }
@@ -126,7 +136,7 @@ export function buildQuestionBlock(q, orderNumber, group, options = {}) {
   if (group.type === "single" && group.audioUrl) {
     const audioWrap = document.createElement("div");
     audioWrap.className = "question-audio-wrap";
-    audioWrap.innerHTML = `<audio controls preload="auto" src="${escapeHtml(group.audioUrl)}"></audio>`;
+    audioWrap.innerHTML = `<audio controls controlslist="nodownload" disableremoteplayback preload="auto" src="${escapeHtml(group.audioUrl)}"></audio>`;
     card.appendChild(audioWrap);
   }
 

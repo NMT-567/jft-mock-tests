@@ -3,10 +3,10 @@
  * Controller for review.html — displays every question with the student's
  * answer, correct answer, explanation, and supports filter + search.
  */
-import { loadResult } from "./storage.js?v=6";
+import { loadResult } from "./storage.js?v=7";
 import { supabase } from "./supabaseClient.js?v=1";
 import { requireAuth } from "./auth.js?v=4";
-import { hidePageLoader, initThemeToggle, renderRichText, escapeHtml, debounce, getQueryParam } from "./utils.js?v=4";
+import { hidePageLoader, initThemeToggle, renderRichText, escapeHtml, debounce, getQueryParam } from "./utils.js?v=5";
 
 const els = {
   darkModeToggle: document.getElementById("darkModeToggle"),
@@ -118,7 +118,7 @@ function renderReviewItem(answer) {
     : "";
 
   const audioHtml = answer.audioUrl
-    ? `<audio class="review-audio" controls preload="none" src="${escapeHtml(answer.audioUrl)}"></audio>`
+    ? `<audio class="review-audio" controls controlslist="nodownload" disableremoteplayback preload="none" src="${escapeHtml(answer.audioUrl)}"></audio>`
     : "";
 
   const optionsHtml = answer.options
