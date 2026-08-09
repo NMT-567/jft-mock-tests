@@ -577,19 +577,3 @@
    ========================================================= */
 .exam-start-notice-list { text-align: left; margin: 12px 0; padding-left: 4px; list-style: none; }
 .exam-start-notice-list li { padding: 4px 0; font-size: 0.9rem; }
-
-/* =========================================================
-   IN-PLACE PINCH ZOOM
-   ========================================================= */
-/* No new overflow:hidden needed here — both .question-image-wrap and
-   .group-media-wrap already had it (see their own rules above), which
-   turns out to be exactly what's needed: transform:scale() never
-   participates in layout/reflow to begin with, and the pre-existing
-   overflow:hidden clips any visual overflow from a zoomed-in image at
-   the wrapper's own edge — so surrounding text can never shift or have
-   a zoomed image spill onto it, at any zoom level, with no extra CSS
-   beyond what was already there. */
-.question-image-wrap img, .group-media-wrap img {
-  will-change: transform;
-  transition: transform 0.05s linear; /* smooths tiny jitter between touchmove events without adding perceptible lag */
-}

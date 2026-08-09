@@ -14,7 +14,7 @@ import { saveSession, loadSession, clearSession, saveResult, startOrResumeAttemp
 import { requireAuth } from "./auth.js?v=4";
 import { hidePageLoader, initThemeToggle, debounce } from "./utils.js?v=5";
 import { buildSharedBlock, buildQuestionBlock } from "./groupRenderer.js?v=6";
-import { initImagePinchZoom } from "./imagePinchZoom.js?v=1";
+
 import {
   lockdownInputSurface,
   blockKeyboardShortcuts,
@@ -1081,12 +1081,6 @@ function bindEvents() {
   els.prevBtn.addEventListener("click", goPrev);
   els.nextBtn.addEventListener("click", goNext);
   els.fullscreenBtn.addEventListener("click", toggleFullscreen);
-
-  // In-place two-finger pinch-zoom on question images — no
-  // click-to-open, no overlay. See js/imagePinchZoom.js's own header
-  // comment for exactly why this is delegated on groupContent (a
-  // stable container) rather than attached to the images directly.
-  initImagePinchZoom(els.groupContent);
 
   els.paletteToggleBtn.addEventListener("click", togglePalette);
   els.sheetBackdrop.addEventListener("click", closePalette);
