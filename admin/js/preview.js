@@ -5,7 +5,7 @@
  * correct answer highlighted — reusing js/groupRenderer.js so this can
  * never visually drift from what students actually see in js/exam.js.
  */
-import { buildSharedBlock, buildQuestionBlock } from "../../js/groupRenderer.js?v=7";
+import { buildSharedBlock, buildQuestionBlock } from "../../js/groupRenderer.js?v=8";
 import { flattenDraftQuestions } from "./export.js?v=9";
 import { resolveGroupQuestions } from "./questionBank.js?v=4";
 
@@ -54,7 +54,7 @@ if (pageRoot) {
 
 async function initFullPreviewPage(root) {
   const { loadDraft } = await import("./storage.js?v=3");
-  const { hidePageLoader, getQueryParam } = await import("../../js/utils.js?v=5");
+  const { hidePageLoader, getQueryParam } = await import("../../js/utils.js?v=6");
 
   const id = getQueryParam("id");
   const draft = id ? loadDraft(id) : null;

@@ -10,7 +10,7 @@
 import { loadResult } from "./storage.js?v=7";
 import { supabase } from "./supabaseClient.js?v=1";
 import { requireAuth } from "./auth.js?v=4";
-import { hidePageLoader, initThemeToggle, stampYear, getQueryParam } from "./utils.js?v=5";
+import { hidePageLoader, initThemeToggle, stampYear, getQueryParam } from "./utils.js?v=6";
 import { initContentProtection, initFullscreenGuard } from "./security.js?v=5";
 
 const els = {

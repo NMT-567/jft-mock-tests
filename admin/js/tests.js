@@ -8,7 +8,7 @@
 import { requireAdminSession } from "./adminAuth.js?v=1";
 import { supabase } from "../../js/supabaseClient.js?v=1";
 import { listSupabaseTests, setTestStatus, deleteSupabaseTest } from "./publish.js?v=5";
-import { hidePageLoader, initThemeToggle, stampYear } from "../../js/utils.js?v=5";
+import { hidePageLoader, initThemeToggle, stampYear } from "../../js/utils.js?v=6";
 import { showToast, confirmDialog } from "./components.js?v=3";
 
 const els = {

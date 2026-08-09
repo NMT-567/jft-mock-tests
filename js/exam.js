@@ -7,13 +7,13 @@
  * group's page, then scrolls to that question's anchor within it.
  */
 import { loadTest, findQuestionLocation } from "./loader.js?v=8";
-import { ExamTimer, getTimerState, formatTime } from "./timer.js?v=4";
+import { ExamTimer, getTimerState, formatTime } from "./timer.js?v=5";
 import { renderPalette, updatePaletteState, computeSummary, computeGroupCompletion } from "./palette.js?v=3";
 import { bindArrowKeyNavigation, resolveJumpQuestionId, bindSwipeToClose } from "./navigation.js?v=3";
 import { saveSession, loadSession, clearSession, saveResult, startOrResumeAttempt, submitAttemptServerSide } from "./storage.js?v=7";
 import { requireAuth } from "./auth.js?v=4";
-import { hidePageLoader, initThemeToggle, debounce } from "./utils.js?v=5";
-import { buildSharedBlock, buildQuestionBlock } from "./groupRenderer.js?v=7";
+import { hidePageLoader, initThemeToggle, debounce, initPinchZoom } from "./utils.js?v=6";
+import { buildSharedBlock, buildQuestionBlock } from "./groupRenderer.js?v=8";
 
 import {
   lockdownInputSurface,
@@ -1014,6 +1014,16 @@ function zoomIn() {
     applyZoom();
   }
 }
+
+// Two-finger pinch drives the exact same zoomLevel/applyZoom() the
+// +/- buttons use — see utils.js's initPinchZoom for why this exists
+// as a separate gesture implementation rather than relying on the
+// browser's own native pinch-zoom.
+initPinchZoom({
+  getLevel: () => zoomLevel,
+  setLevel: (n) => { zoomLevel = n; applyZoom(); },
+  levels: ZOOM_LEVELS,
+});
 
 /* =========================================================
    SECURITY WIRING (see security.js for what is/isn't enforceable)

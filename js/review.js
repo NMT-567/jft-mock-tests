@@ -6,7 +6,7 @@
 import { loadResult } from "./storage.js?v=7";
 import { supabase } from "./supabaseClient.js?v=1";
 import { requireAuth } from "./auth.js?v=4";
-import { hidePageLoader, initThemeToggle, renderRichText, escapeHtml, getQueryParam } from "./utils.js?v=5";
+import { hidePageLoader, initThemeToggle, renderRichText, escapeHtml, getQueryParam, initPinchZoom } from "./utils.js?v=6";
 import { initContentProtection, initFullscreenGuard } from "./security.js?v=5";
 
 const els = {
@@ -144,6 +144,15 @@ function zoomInReview() {
     applyReviewZoom();
   }
 }
+
+// Two-finger pinch drives the exact same reviewZoomLevel/
+// applyReviewZoom() the +/- buttons use — see utils.js's
+// initPinchZoom and exam.js's matching wiring for why this exists.
+initPinchZoom({
+  getLevel: () => reviewZoomLevel,
+  setLevel: (n) => { reviewZoomLevel = n; applyReviewZoom(); },
+  levels: REVIEW_ZOOM_LEVELS,
+});
 
 function renderList() {
   if (!result.answers || result.answers.length === 0) {

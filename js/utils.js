@@ -132,6 +132,83 @@ export function stampYear() {
 }
 
 /**
+ * Two-finger pinch-to-zoom, wired into the SAME zoom system the
+ * existing +/- buttons already drive (a `zoomLevel` variable snapped
+ * to a fixed `levels` array, applied via a `--exam-zoom` CSS custom
+ * property — see css/exam.css's `#groupContent { zoom: var(--exam-zoom) }`
+ * and css/review.css's equivalent rule). Added specifically because
+ * the browser's OWN native pinch-zoom (the viewport meta tag already
+ * allows it) does not work while an element is in Fullscreen API
+ * fullscreen on most mobile browsers — a real platform limitation,
+ * not something fixable via viewport/meta/CSS alone — so exam/review
+ * content would otherwise be un-zoomable for the entire time
+ * fullscreen is enforced. This reimplements the gesture at the JS
+ * level and drives the app's own existing zoom mechanism instead,
+ * which works identically whether or not fullscreen is active.
+ *
+ * @param {{getLevel: () => number, setLevel: (n: number) => void, levels: number[]}} config
+ *   getLevel/setLevel read and apply the caller's own zoomLevel
+ *   variable (via its own applyZoom()-style function) so this stays a
+ *   thin gesture-recognizer with no zoom logic of its own to
+ *   duplicate or drift out of sync with the +/- buttons.
+ * @returns {{teardown: () => void}}
+ */
+export function initPinchZoom({ getLevel, setLevel, levels }) {
+  let startDistance = null;
+  let startLevel = null;
+
+  function touchDistance(touches) {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.hypot(dx, dy);
+  }
+
+  function nearestLevel(target) {
+    return levels.reduce((prev, curr) => (Math.abs(curr - target) < Math.abs(prev - target) ? curr : prev));
+  }
+
+  function onTouchStart(e) {
+    if (e.touches.length === 2) {
+      startDistance = touchDistance(e.touches);
+      startLevel = getLevel();
+    }
+  }
+
+  function onTouchMove(e) {
+    if (e.touches.length !== 2 || startDistance === null) return;
+    // Must actually prevent default here (this listener is registered
+    // non-passive) — otherwise the browser's own page-scroll/pinch
+    // gesture recognizer fights this one for the same two touch
+    // points, and neither ends up feeling responsive.
+    e.preventDefault();
+    const scaleFactor = touchDistance(e.touches) / startDistance;
+    const target = nearestLevel(startLevel * scaleFactor);
+    if (target !== getLevel()) setLevel(target);
+  }
+
+  function onTouchEnd(e) {
+    if (e.touches.length < 2) {
+      startDistance = null;
+      startLevel = null;
+    }
+  }
+
+  document.addEventListener("touchstart", onTouchStart, { passive: true });
+  document.addEventListener("touchmove", onTouchMove, { passive: false });
+  document.addEventListener("touchend", onTouchEnd, { passive: true });
+  document.addEventListener("touchcancel", onTouchEnd, { passive: true });
+
+  return {
+    teardown: () => {
+      document.removeEventListener("touchstart", onTouchStart);
+      document.removeEventListener("touchmove", onTouchMove);
+      document.removeEventListener("touchend", onTouchEnd);
+      document.removeEventListener("touchcancel", onTouchEnd);
+    },
+  };
+}
+
+/**
  * Registers sw-assets.js — a narrow-scope Service Worker that only
  * caches external R2 image/audio assets (see that file's own header
  * comment for exactly what it does and doesn't touch). Called here,

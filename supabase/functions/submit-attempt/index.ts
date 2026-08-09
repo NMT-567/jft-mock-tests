@@ -223,8 +223,18 @@ function computeResult(
           isCorrect,
           explanation: q.explanation,
           marks: q.marks,
-          imageUrl: group.imageUrl,
-          audioUrl: group.audioUrl,
+          // Previously only ever read the GROUP's own shared image/audio
+          // here — but this project's real content almost always stores
+          // media on each QUESTION instead (see admin/js/export.js and
+          // js/loader.js, which carry q.imageUrl/q.audioUrl through for
+          // exactly this reason). Same "single" vs. everything-else
+          // convention used by js/groupRenderer.js's buildQuestionBlock,
+          // so review shows precisely what the exam itself showed. Falls
+          // back to the group's own field if the question has none of
+          // its own, so a hand-authored group with real shared media
+          // still works too.
+          imageUrl: (group.type === "single" ? group.imageUrl : (q.imageUrl || group.imageUrl)) ?? null,
+          audioUrl: (group.type === "single" ? group.audioUrl : (q.audioUrl || group.audioUrl)) ?? null,
           sectionTitle: section.title,
           groupType: group.type,
         });

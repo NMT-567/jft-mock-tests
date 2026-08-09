@@ -6,7 +6,7 @@
  * highlighted) — a single source of truth so the admin's live preview can
  * never visually drift from what students actually see.
  */
-import { renderRichText, escapeHtml } from "./utils.js?v=5";
+import { renderRichText, escapeHtml } from "./utils.js?v=6";
 
 /** Build the shared passage/conversation/media block for a group, or null for "single". */
 export function buildSharedBlock(group) {

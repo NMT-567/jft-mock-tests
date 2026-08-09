@@ -7,7 +7,7 @@
  * need a fresh session to pick up the change).
  */
 import { getProfile, signOut } from "./auth.js?v=4";
-import { hidePageLoader } from "./utils.js?v=5";
+import { hidePageLoader } from "./utils.js?v=6";
 
 const statusMessage = document.getElementById("statusMessage");
 const signOutBtn = document.getElementById("signOutBtn");

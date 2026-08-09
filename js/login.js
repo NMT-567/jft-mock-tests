@@ -10,7 +10,7 @@
  * needed — this page only starts the OAuth handshake.
  */
 import { getSession, signInWithGoogle } from "./auth.js?v=4";
-import { hidePageLoader, initThemeToggle, getQueryParam } from "./utils.js?v=5";
+import { hidePageLoader, initThemeToggle, getQueryParam } from "./utils.js?v=6";
 
 const els = {
   darkModeToggle: document.getElementById("darkModeToggle"),

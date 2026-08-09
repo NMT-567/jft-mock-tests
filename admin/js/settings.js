@@ -12,7 +12,7 @@
  * key are harmless (just ignored), and this page no longer writes one.
  */
 import { readFileAsDataUrl, showToast } from "./components.js?v=3";
-import { hidePageLoader, initThemeToggle } from "../../js/utils.js?v=5";
+import { hidePageLoader, initThemeToggle } from "../../js/utils.js?v=6";
 
 const DEFAULTS = {
   siteTitle: "Nihongo Mock Test",
