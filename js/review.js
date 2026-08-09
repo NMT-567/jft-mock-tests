@@ -6,19 +6,15 @@
 import { loadResult } from "./storage.js?v=7";
 import { supabase } from "./supabaseClient.js?v=1";
 import { requireAuth } from "./auth.js?v=4";
-import { hidePageLoader, initThemeToggle, renderRichText, escapeHtml, debounce, getQueryParam } from "./utils.js?v=5";
+import { hidePageLoader, initThemeToggle, renderRichText, escapeHtml, getQueryParam } from "./utils.js?v=5";
 
 const els = {
   darkModeToggle: document.getElementById("darkModeToggle"),
   backToResultBtn: document.getElementById("backToResultBtn"),
-  filterChips: document.querySelectorAll(".filter-chip"),
-  reviewSearchInput: document.getElementById("reviewSearchInput"),
   reviewList: document.getElementById("reviewList"),
 };
 
 let result = null;
-let activeFilter = "all";
-let searchTerm = "";
 
 async function init() {
   initThemeToggle(els.darkModeToggle);
@@ -55,54 +51,15 @@ function bindEvents() {
   els.backToResultBtn.addEventListener("click", () => {
     window.location.href = "result.html";
   });
-
-  els.filterChips.forEach((chip) => {
-    chip.addEventListener("click", () => {
-      els.filterChips.forEach((c) => c.classList.remove("active"));
-      chip.classList.add("active");
-      activeFilter = chip.dataset.filter;
-      renderList();
-    });
-  });
-
-  els.reviewSearchInput.addEventListener(
-    "input",
-    debounce(() => {
-      searchTerm = els.reviewSearchInput.value.trim();
-      renderList();
-    }, 150)
-  );
-}
-
-function matchesFilter(answer) {
-  switch (activeFilter) {
-    case "correct":
-      return answer.isCorrect;
-    case "wrong":
-      return !answer.isCorrect && answer.givenOption !== null;
-    case "skipped":
-      return answer.givenOption === null;
-    case "bookmarked":
-      return answer.bookmarked;
-    default:
-      return true;
-  }
-}
-
-function matchesSearch(answer) {
-  if (!searchTerm) return true;
-  return String(answer.order) === searchTerm.replace(/^#/, "");
 }
 
 function renderList() {
-  const filtered = result.answers.filter((a) => matchesFilter(a) && matchesSearch(a));
-
-  if (filtered.length === 0) {
-    els.reviewList.innerHTML = `<div class="review-empty">No questions match this filter.</div>`;
+  if (!result.answers || result.answers.length === 0) {
+    els.reviewList.innerHTML = `<div class="review-empty">No questions found for this attempt.</div>`;
     return;
   }
 
-  els.reviewList.innerHTML = filtered.map(renderReviewItem).join("");
+  els.reviewList.innerHTML = result.answers.map(renderReviewItem).join("");
 }
 
 function renderReviewItem(answer) {

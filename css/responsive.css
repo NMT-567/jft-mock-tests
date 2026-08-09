@@ -76,9 +76,3 @@
   .result-stat-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
-/* =========================================================
-   REVIEW PAGE mobile polish
-   ========================================================= */
-@media (max-width: 480px) {
-  .review-toolbar { flex-direction: column; align-items: stretch; }
-}
