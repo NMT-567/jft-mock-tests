@@ -426,7 +426,6 @@ function renderQuestionList(group) {
   });
   els.groupContent.appendChild(list);
 }
-}
 
 /* =========================================================
    STATE MUTATIONS
