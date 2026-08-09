@@ -441,6 +441,20 @@ function goPrev() {
 function goNext() {
   const currentGroup = test.pages[state.currentPageIndex];
 
+  // Any required question on the page currently being LEFT must be
+  // answered before advancing. Previously this was only checked once,
+  // at the very end of the whole section — a student could click
+  // through several required-but-blank pages first and only get
+  // stopped at the last one. Same warning dialog as before (now
+  // scope-neutral wording, see exam.html), just triggered per-page.
+  const missingOnThisPage = findMissingRequiredQuestions(state.currentSectionIndex).filter(
+    (entry) => entry.pageIndex === state.currentPageIndex
+  );
+  if (missingOnThisPage.length > 0) {
+    openSectionIncompleteWarning(missingOnThisPage.length);
+    return;
+  }
+
   // Spec requirement: a listening group must be fully answered before advancing.
   if (currentGroup.type === "listening_group") {
     const completion = computeGroupCompletion(currentGroup, state.answers);
