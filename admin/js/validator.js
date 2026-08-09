@@ -67,9 +67,23 @@ function validateGroup(group, section, errors) {
   // js/groupRenderer.js (not gated to passage_group specifically), so
   // this was purely a validator gap, not a missing feature: the content
   // and rendering already fully support an image-only passage.
+  //
+  // Also accept media living on the group's own QUESTIONS instead of
+  // the group itself — the sibling nihongo-mock-test source project's
+  // real data never populates group-level passageText/imageUrl/audioUrl
+  // at all (confirmed: always empty strings there), and instead always
+  // stores each question's own image/audio individually. That's
+  // legitimate real content (already fully visible/editable per-
+  // question — see editor.js's optionalQuestionMediaField), not missing
+  // content, so requiring it to *also* exist at the group level was a
+  // false positive for every real imported passage/listening group.
   const hasPassageText = group.passageText && group.passageText.trim();
   const hasPassageImage = group.imageUrl && group.imageUrl.trim();
-  if (group.type === "passage_group" && !hasPassageText && !hasPassageImage) {
+  const hasChildMedia = (group.questions || []).some((ref) => {
+    const entry = getBankEntry(ref.id);
+    return entry && ((entry.imageUrl && entry.imageUrl.trim()) || (entry.audioUrl && entry.audioUrl.trim()));
+  });
+  if (group.type === "passage_group" && !hasPassageText && !hasPassageImage && !hasChildMedia) {
     errors.push({ ...loc, field: "passageText", message: `${label}: passage text or a passage image is required.` });
   }
   if (group.type === "conversation_group") {
@@ -83,10 +97,10 @@ function validateGroup(group, section, errors) {
       errors.push({ ...loc, field: "audioUrl", message: `${label}: conversation audio is required.` });
     }
   }
-  if (group.type === "listening_group" && !group.audioUrl) {
+  if (group.type === "listening_group" && !group.audioUrl && !hasChildMedia) {
     errors.push({ ...loc, field: "audioUrl", message: `${label}: listening audio is required.` });
   }
-  if (group.type === "image_group" && !group.imageUrl) {
+  if (group.type === "image_group" && !group.imageUrl && !hasChildMedia) {
     errors.push({ ...loc, field: "imageUrl", message: `${label}: an image is required.` });
   }
 

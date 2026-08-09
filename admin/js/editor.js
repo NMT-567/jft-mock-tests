@@ -27,7 +27,7 @@
  */
 import { loadDraft, saveDraft, setLastOpenedDraftId } from "./storage.js?v=3";
 import { el, generateId, showToast, readFileAsDataUrl, confirmDialog } from "./components.js?v=3";
-import { validateDraft, isQuestionComplete, checkBrokenMedia } from "./validator.js?v=6";
+import { validateDraft, isQuestionComplete, checkBrokenMedia } from "./validator.js?v=7";
 import { downloadExport, buildExportDocument } from "./export.js?v=8";
 import { renderGroupPreview } from "./preview.js?v=11";
 import { hidePageLoader, initThemeToggle, debounce, getQueryParam } from "../../js/utils.js?v=5";
