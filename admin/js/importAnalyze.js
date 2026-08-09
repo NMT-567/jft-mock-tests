@@ -414,13 +414,31 @@ export function commitImportPlan(plan, { mode = "new", existingDraftId = null, d
   const idRemap = new Map(); // original source id -> actual bank id used (differs only under "create-copy")
 
   function importQuestion(raw) {
-    const collision = !!getBankEntry(raw.id);
+    const existing = getBankEntry(raw.id);
+    const collision = !!existing;
     let bankId = raw.id;
     if (collision) {
       if (duplicateResolution === "create-copy") {
         bankId = generateId("bq");
+      } else {
+        // "use-existing": never overwrite anything the admin may have
+        // hand-edited — but DO fill in fields that are still genuinely
+        // empty on the existing entry when the source has a value for
+        // them. Without this, a question first imported before
+        // imageUrl/audioUrl were captured at all (see the fix above/
+        // this file's own history) stays permanently empty on every
+        // future re-import too, even of a corrected source file —
+        // "use existing" was skipping the write entirely, which
+        // protects real edits but also silently re-loses data that
+        // was never there to protect in the first place.
+        const gapFill = {};
+        if (!existing.imageUrl && raw.imageUrl) gapFill.imageUrl = raw.imageUrl;
+        if (!existing.audioUrl && raw.audioUrl) gapFill.audioUrl = raw.audioUrl;
+        if (Object.keys(gapFill).length > 0) {
+          saveBankEntry({ ...existing, ...gapFill }, { touchModified: false });
+        }
       }
-      // "use-existing": keep raw.id, and DON'T overwrite the existing entry — skip the write below entirely.
+      // "use-existing", no gaps to fill: keep raw.id, existing entry untouched.
     }
     if (!collision || duplicateResolution === "create-copy") {
       saveBankEntry(
