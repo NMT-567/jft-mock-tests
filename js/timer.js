@@ -5,7 +5,7 @@
  * deriving the display value from a wall-clock deadline rather than
  * a naive decrement counter.
  */
-import { formatTime } from "./utils.js?v=4";
+import { formatTime } from "./utils.js?v=5";
 
 const WARNING_THRESHOLD_SECONDS = 10 * 60; // last 10 minutes -> orange
 const DANGER_THRESHOLD_SECONDS = 5 * 60; // last 5 minutes -> red

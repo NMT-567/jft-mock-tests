@@ -8,7 +8,7 @@
  * is referenced.
  */
 import { el, generateId, showToast, readFileAsDataUrl, confirmDialog } from "./components.js?v=3";
-import { hidePageLoader, initThemeToggle, debounce } from "../../js/utils.js?v=4";
+import { hidePageLoader, initThemeToggle, debounce } from "../../js/utils.js?v=5";
 import { newBankEntry, listBankEntries, saveBankEntry, deleteBankEntry, computeUsageDetails } from "./questionBank.js?v=4";
 
 const FREQUENT_THRESHOLD = 3;

@@ -36,7 +36,28 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// CORS — the actual root cause of the live "Couldn't submit" failure:
+// the browser sends a CORS preflight (OPTIONS) before the real POST,
+// because the request carries an Authorization header + JSON content
+// type cross-origin (the site is served from github.io, this function
+// from supabase.co). Without a response to that preflight containing
+// Access-Control-Allow-Origin, the browser blocks the real request
+// entirely — the function's own logic never even runs; this is a
+// client-side browser security check, not anything server-side to
+// debug. `*` here is safe: this endpoint's real protection is the JWT
+// verification below (auth.getUser() + ownership checks), not CORS —
+// CORS only controls which *websites* can read a response via
+// JavaScript, it is not an authorization mechanism.
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
   try {
     const authHeader = req.headers.get("Authorization") ?? "";
     if (!authHeader) return json({ error: "Missing Authorization header" }, 401);
@@ -247,6 +268,6 @@ function computeResult(
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...corsHeaders },
   });
 }

@@ -90,6 +90,18 @@ export function clearResult() {
  * a Supabase failure block getting the student to their result page.
  */
 /** Creates a new in_progress attempt row, or returns the id of an existing one for this user+test. */
+/**
+ * Returns `{ id, resumed }` — `resumed: true` means an existing
+ * `in_progress` attempt was found and reused; `resumed: false` means a
+ * brand-new attempt row was created (no open attempt existed, whether
+ * because this is a first try or because the previous one was already
+ * submitted). exam.js uses `resumed` to decide whether a local
+ * leftover session is trustworthy — see its updated init(): a genuine
+ * retry/retake always gets a fresh `resumed: false`, and any stale
+ * local session for this test is discarded rather than silently
+ * resumed, so re-opening the same link always starts at question 1
+ * unless there's a real still-open attempt on the server to match.
+ */
 export async function startOrResumeAttempt(userId, testId, { isAdminPreview = false } = {}) {
   try {
     const { data: existing } = await supabase
@@ -101,7 +113,7 @@ export async function startOrResumeAttempt(userId, testId, { isAdminPreview = fa
       .order("started_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    if (existing) return existing.id;
+    if (existing) return { id: existing.id, resumed: true };
 
     const { data, error } = await supabase
       .from("test_attempts")
@@ -109,10 +121,10 @@ export async function startOrResumeAttempt(userId, testId, { isAdminPreview = fa
       .select("id")
       .single();
     if (error) throw error;
-    return data.id;
+    return { id: data.id, resumed: false };
   } catch (err) {
     console.error("storage.startOrResumeAttempt failed (continuing without a remote attempt row)", err);
-    return null;
+    return { id: null, resumed: false };
   }
 }
 

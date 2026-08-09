@@ -10,10 +10,11 @@ import { loadTest, findQuestionLocation } from "./loader.js?v=7";
 import { ExamTimer, getTimerState, formatTime } from "./timer.js?v=4";
 import { renderPalette, updatePaletteState, computeSummary, computeGroupCompletion } from "./palette.js?v=3";
 import { bindArrowKeyNavigation, resolveJumpQuestionId, bindSwipeToClose } from "./navigation.js?v=3";
-import { saveSession, loadSession, clearSession, saveResult, startOrResumeAttempt, submitAttemptServerSide } from "./storage.js?v=6";
+import { saveSession, loadSession, clearSession, saveResult, startOrResumeAttempt, submitAttemptServerSide } from "./storage.js?v=7";
 import { requireAuth } from "./auth.js?v=4";
-import { hidePageLoader, initThemeToggle, debounce } from "./utils.js?v=4";
-import { buildSharedBlock, buildQuestionBlock } from "./groupRenderer.js?v=5";
+import { hidePageLoader, initThemeToggle, debounce } from "./utils.js?v=5";
+import { buildSharedBlock, buildQuestionBlock } from "./groupRenderer.js?v=6";
+import { initImageZoom } from "./imageZoom.js?v=1";
 import {
   lockdownInputSurface,
   blockKeyboardShortcuts,
@@ -30,6 +31,7 @@ const els = {
   startExamBtn: document.getElementById("startExamBtn"),
   securityToastContainer: document.getElementById("securityToastContainer"),
   adminTestModeBanner: document.getElementById("adminTestModeBanner"),
+  examWatermark: document.getElementById("examWatermark"),
   examProgressText: document.getElementById("examProgressText"),
   progressBarFill: document.getElementById("progressBarFill"),
   timerDisplay: document.getElementById("timerDisplay"),
@@ -43,6 +45,9 @@ const els = {
   examSectionProgress: document.getElementById("examSectionProgress"),
 
   groupContent: document.getElementById("groupContent"),
+  imageZoomOverlay: document.getElementById("imageZoomOverlay"),
+  imageZoomImg: document.getElementById("imageZoomImg"),
+  imageZoomCloseBtn: document.getElementById("imageZoomCloseBtn"),
 
   prevBtn: document.getElementById("prevBtn"),
   nextBtn: document.getElementById("nextBtn"),
@@ -81,6 +86,7 @@ const els = {
 
   sectionTransitionOverlay: document.getElementById("sectionTransitionOverlay"),
   sectionTransitionFromName: document.getElementById("sectionTransitionFromName"),
+  sectionTransitionLabel: document.getElementById("sectionTransitionLabel"),
   sectionTransitionArrowRow: document.getElementById("sectionTransitionArrowRow"),
   sectionTransitionToName: document.getElementById("sectionTransitionToName"),
 
@@ -113,6 +119,7 @@ let fullscreenGuard = null;
 let lastRenderedSectionIndex = -1;
 let backButtonTrapActive = false;
 let pendingRetryIsAutoSubmit = false; // set by showSubmitFailedModal(), read by the retry button's handler
+let allowUnload = false; // set true only right before an intentional post-finish navigation — see the beforeunload handler at the bottom of this file
 const autoSaveScheduled = debounce(persistSession, 400);
 
 async function init() {
@@ -151,12 +158,40 @@ async function init() {
     return;
   }
 
+  // Awaited (not fire-and-forget) specifically so we know BEFORE
+  // deciding whether to trust any local session: `resumed: true` means
+  // a real, still-open attempt exists server-side; `resumed: false`
+  // means this is a genuinely fresh start (first attempt, OR the
+  // previous one was already submitted) — see storage.js's updated
+  // startOrResumeAttempt() doc-comment. This is what makes clicking a
+  // shared/direct exam link always start at question 1 on a retry,
+  // instead of silently resuming stale localStorage progress from a
+  // completed or long-abandoned attempt.
+  let attemptResumed = false;
+  if (profile) {
+    // testId here is the URL param (the REAL Supabase UUID) — NOT
+    // test.id, which is content.id, embedded at publish time from the
+    // local editor draft's own id and never a valid UUID (see
+    // export.js). Passing test.id here was a real bug fixed in an
+    // earlier session; kept as testId deliberately.
+    const attempt = await startOrResumeAttempt(profile.id, testId, { isAdminPreview: isAnyAdminPreview });
+    state.attemptId = attempt.id;
+    attemptResumed = attempt.resumed;
+  }
+
   const existingSession = loadSession();
-  const canResume = existingSession && existingSession.testId === test.id;
+  // Draft preview has no server-side attempt concept at all (never
+  // touches Supabase) — local-session resume there is unchanged, purely
+  // based on whether a matching local draft session exists, which is
+  // genuinely useful for an admin iterating on their own draft.
+  const canResume = isDraftPreview
+    ? existingSession && existingSession.testId === test.id
+    : attemptResumed && existingSession && existingSession.testId === test.id;
 
   if (canResume) {
     hydrateFromSession(existingSession);
   } else {
+    clearSession(); // discard any stale/unrelated local session — this is a fresh attempt, always start at question 1
     state.studentName = previewAsEmail || profile?.display_name || profile?.email || "Admin Preview";
     state.startedAt = Date.now();
     state.remainingSeconds = test.noTimeLimit ? Number.MAX_SAFE_INTEGER : test.durationMinutes * 60;
@@ -164,28 +199,12 @@ async function init() {
     persistSession();
   }
 
-  // Fire-and-forget: create/resume the Supabase attempt row, always
-  // recorded under the ACTUAL signed-in admin's own id (never the
-  // previewAsEmail target — see the banner copy above and the module
-  // doc-comment on startOrResumeAttempt). Draft preview never touches
-  // Supabase at all, matching its pre-existing behavior.
-  //
-  // Uses `testId` (the URL param — the REAL Supabase-generated UUID,
-  // exactly what the dashboard's link was built from) here, NOT
-  // `test.id` — test.id is content.id, embedded in the exported JSON at
-  // publish time from the local editor draft's OWN id (see export.js),
-  // which looks like "test-mskidqg4-wvi7tt", not a UUID. test_attempts
-  // .test_id is uuid-typed, so passing test.id here would fail with the
-  // exact same "invalid input syntax for type uuid" error publish_test()
-  // used to hit before Session 20's fix — found and fixed together,
-  // since it's the same root mistake in a second location.
-  if (profile) {
-    startOrResumeAttempt(profile.id, testId, { isAdminPreview: isAnyAdminPreview }).then((id) => {
-      state.attemptId = id;
-    });
-  }
-
   els.examTestTitle.textContent = test.title;
+  // Includes the student's own name/email — this is what actually
+  // gives the watermark anti-leak value beyond plain branding: a
+  // leaked screenshot/photo can be traced back to whose attempt it
+  // came from.
+  els.examWatermark.textContent = `Nihongo Mock Test — ${state.studentName}`;
   renderSectionProgress();
   renderPalette(els.paletteGrid, currentSectionQuestionIndex(), jumpToQuestionId);
   renderPage(state.currentPageIndex);
@@ -359,6 +378,28 @@ function renderGroupContent(group) {
   const sharedBlock = buildSharedBlock(group);
   if (sharedBlock) els.groupContent.appendChild(sharedBlock);
 
+  renderQuestionList(group);
+}
+
+/**
+ * Rebuilds ONLY the question cards (radio selections, bookmarks) for
+ * the current group — deliberately leaves the shared block (built by
+ * buildSharedBlock: the group's audio/image/passage) completely alone.
+ *
+ * Selecting an answer used to call the FULL renderGroupContent(),
+ * which does `els.groupContent.innerHTML = ""` and rebuilds
+ * everything from scratch — including a brand-new <audio> element,
+ * which necessarily reset/stopped any in-progress playback the instant
+ * a student picked an answer. This is what actually fixes that: only
+ * the part of the DOM that can genuinely change on a selection (which
+ * option is marked selected, the listening "N/M answered" hint) gets
+ * rebuilt; the audio/image node itself is never touched, so playback
+ * continues uninterrupted.
+ */
+function renderQuestionList(group) {
+  els.groupContent.querySelector(".group-completion-hint")?.remove();
+  els.groupContent.querySelector(".question-block-list")?.remove();
+
   if (group.type === "listening_group") {
     const completion = computeGroupCompletion(group, state.answers);
     if (!completion.complete) {
@@ -385,6 +426,7 @@ function renderGroupContent(group) {
   });
   els.groupContent.appendChild(list);
 }
+}
 
 /* =========================================================
    STATE MUTATIONS
@@ -395,7 +437,7 @@ function markVisited(questionId) {
 
 function selectOption(questionId, option) {
   state.answers[questionId] = option;
-  renderGroupContent(test.pages[state.currentPageIndex]);
+  renderQuestionList(test.pages[state.currentPageIndex]);
   refreshPaletteAndSummary();
   autoSaveScheduled();
 }
@@ -459,7 +501,7 @@ function goNext() {
   if (currentGroup.type === "listening_group") {
     const completion = computeGroupCompletion(currentGroup, state.answers);
     if (!completion.complete) {
-      renderGroupContent(currentGroup);
+      renderQuestionList(currentGroup); // refreshes the "N/M answered" hint only — never touches the audio element, so a click on Next while audio is still playing doesn't stop it
       return;
     }
   }
@@ -518,6 +560,7 @@ function showSectionTransition(onDone) {
   const isFinalSection = state.currentSectionIndex === test.sections.length - 1;
   const toTitle = isFinalSection ? null : test.sections[state.currentSectionIndex + 1].title;
 
+  els.sectionTransitionLabel.textContent = "Section Complete";
   els.sectionTransitionFromName.textContent = fromTitle;
   els.sectionTransitionArrowRow.hidden = !toTitle;
   if (toTitle) els.sectionTransitionToName.textContent = toTitle;
@@ -531,6 +574,29 @@ function showSectionTransition(onDone) {
       onDone();
     }, 200); // matches the CSS fade-out duration
   }, 900);
+}
+
+/**
+ * Same overlay/animation as showSectionTransition() above — reused, not
+ * duplicated — but for the moment the whole exam finishes, right before
+ * leaving for the result page. Shows a short message (no
+ * from/arrow-to-next-section row, since there's nothing "next" to name)
+ * then calls onDone(), which callers use to actually navigate.
+ */
+function showFinishTransition(message, onDone) {
+  els.sectionTransitionLabel.textContent = message;
+  els.sectionTransitionFromName.textContent = "";
+  els.sectionTransitionArrowRow.hidden = true;
+
+  els.sectionTransitionOverlay.hidden = false;
+  requestAnimationFrame(() => els.sectionTransitionOverlay.classList.add("visible"));
+  setTimeout(() => {
+    els.sectionTransitionOverlay.classList.remove("visible");
+    setTimeout(() => {
+      els.sectionTransitionOverlay.hidden = true;
+      onDone();
+    }, 200);
+  }, 1100);
 }
 
 function refreshPaletteAndSummary() {
@@ -686,9 +752,12 @@ async function submitTest(isAutoSubmit = false) {
   }
 
   clearSession();
+  allowUnload = true;
   const resultParams = new URLSearchParams(window.location.search);
   resultParams.set("attemptId", state.attemptId);
-  window.location.href = `result.html?${resultParams.toString()}`;
+  showFinishTransition("Exam Submitted", () => {
+    window.location.href = `result.html?${resultParams.toString()}`;
+  });
 }
 
 /** The one place client-side scoring still happens — admin's own unsaved local draft only (see submitTest()'s isDraftPreview branch above). Logic unchanged from before the correctOption security fix; this content never leaves the admin's own browser. */
@@ -778,7 +847,10 @@ function submitDraftPreviewLocally(isAutoSubmit) {
 
   saveResult(result);
   clearSession();
-  window.location.href = "result.html?adminPreview=1";
+  allowUnload = true;
+  showFinishTransition("Exam Submitted", () => {
+    window.location.href = "result.html?adminPreview=1";
+  });
 }
 
 /** Shown when submitAttemptServerSide() fails for a real (non-draft-preview) submission — offline, the Edge Function not deployed, etc. Deliberately blocking and retry-only, never a silent fallback to a fabricated score. The session is NOT cleared, so Retry re-sends the exact same answers. */
@@ -971,6 +1043,24 @@ function bindEvents() {
   els.nextBtn.addEventListener("click", goNext);
   els.fullscreenBtn.addEventListener("click", toggleFullscreen);
 
+  // Delegated on the STABLE container, not on the images themselves —
+  // groupContent's inner DOM gets rebuilt on every navigation and every
+  // answer selection (see renderGroupContent()/renderQuestionList()),
+  // so a listener attached directly to an <img> would be lost the
+  // moment that element gets recreated. A delegated listener on the
+  // never-replaced parent keeps working regardless. Targets the WRAPPER
+  // (.question-image-wrap / .group-media-wrap), not the <img> itself,
+  // because the <img> has pointer-events:none (existing, unchanged —
+  // protects against blocking nearby clicks), which means a tap
+  // "on" the image visually hit-tests to its wrapper instead.
+  const imageZoom = initImageZoom(els.imageZoomOverlay, els.imageZoomImg, els.imageZoomCloseBtn);
+  els.groupContent.addEventListener("click", (e) => {
+    const wrapper = e.target.closest(".question-image-wrap, .group-media-wrap");
+    if (!wrapper) return;
+    const img = wrapper.querySelector("img");
+    if (img) imageZoom.open(img.src, img.alt);
+  });
+
   els.paletteToggleBtn.addEventListener("click", togglePalette);
   els.sheetBackdrop.addEventListener("click", closePalette);
   bindSwipeToClose(els.sheetDragHandle, els.paletteSheet, closePalette);
@@ -1012,6 +1102,15 @@ function bindEvents() {
   bindArrowKeyNavigation(goPrev, goNext);
 
   window.addEventListener("beforeunload", (e) => {
+    // Skipped once the exam has genuinely finished (allowUnload is only
+    // ever set true right before the post-submit redirect to
+    // result.html) — without this, the browser's native "leave site?"
+    // popup fired even on a completely successful, expected finish,
+    // which is confusing rather than protective. It still fires
+    // correctly for every OTHER way of leaving mid-exam (closing the
+    // tab, navigating away, refreshing) since allowUnload stays false
+    // the entire rest of the time.
+    if (allowUnload) return;
     e.preventDefault();
     e.returnValue = "";
   });

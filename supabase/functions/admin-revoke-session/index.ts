@@ -20,7 +20,20 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// CORS — same fix as supabase/functions/submit-attempt/index.ts (see
+// that file's comment for the full explanation). This function is
+// called from admin/js/users.js the same cross-origin way, so it has
+// the identical preflight-blocking gap.
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
   try {
     const authHeader = req.headers.get("Authorization") ?? "";
     const callerToken = authHeader.replace("Bearer ", "");
@@ -85,6 +98,6 @@ Deno.serve(async (req) => {
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...corsHeaders },
   });
 }

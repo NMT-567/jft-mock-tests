@@ -30,7 +30,7 @@ import { el, generateId, showToast, readFileAsDataUrl, confirmDialog } from "./c
 import { validateDraft, isQuestionComplete, checkBrokenMedia } from "./validator.js?v=6";
 import { downloadExport, buildExportDocument } from "./export.js?v=8";
 import { renderGroupPreview } from "./preview.js?v=10";
-import { hidePageLoader, initThemeToggle, debounce, getQueryParam } from "../../js/utils.js?v=4";
+import { hidePageLoader, initThemeToggle, debounce, getQueryParam } from "../../js/utils.js?v=5";
 import { newBankEntry, getBankEntry, saveBankEntry, listBankEntries, computeUsageCounts } from "./questionBank.js?v=4";
 
 const GROUP_TYPES = ["passage_group", "conversation_group", "listening_group", "image_group"];

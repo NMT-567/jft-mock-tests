@@ -5,7 +5,7 @@
  * created, choose New/Replace, resolve any Question Bank id collisions,
  * then import and see the source-vs-imported integrity report.
  */
-import { hidePageLoader, initThemeToggle } from "../../js/utils.js?v=4";
+import { hidePageLoader, initThemeToggle } from "../../js/utils.js?v=5";
 import { saveDraft, listDrafts } from "./storage.js?v=3";
 import { el, showToast, formatUpdatedAt } from "./components.js?v=3";
 import { buildImportPlan, commitImportPlan, runIntegrityCheck, FIXED_SECTIONS } from "./importAnalyze.js?v=1";

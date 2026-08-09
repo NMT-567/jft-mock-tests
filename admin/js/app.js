@@ -4,7 +4,7 @@
  */
 import { listDrafts, saveDraft, deleteDraft, getLastOpenedDraftId, getSettings, saveSettings } from "./storage.js?v=3";
 import { el, generateId, showToast, formatUpdatedAt, confirmDialog } from "./components.js?v=3";
-import { hidePageLoader, initThemeToggle, stampYear } from "../../js/utils.js?v=4";
+import { hidePageLoader, initThemeToggle, stampYear } from "../../js/utils.js?v=5";
 
 const els = {
   darkModeToggle: document.getElementById("darkModeToggle"),

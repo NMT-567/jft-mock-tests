@@ -577,3 +577,111 @@
    ========================================================= */
 .exam-start-notice-list { text-align: left; margin: 12px 0; padding-left: 4px; list-style: none; }
 .exam-start-notice-list li { padding: 4px 0; font-size: 0.9rem; }
+
+/* =========================================================
+   WATERMARK — anti-leak deterrent, not a real security guarantee
+   (same honesty standard as the rest of this project's security
+   features — a moving, semi-transparent, per-student watermark makes
+   screenshots/photos harder to crop cleanly and identifies the source
+   if one leaks, but cannot prevent leaking outright).
+   ========================================================= */
+.exam-watermark {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 40; /* above exam content, below every modal/overlay in this file (all 90+) so it never competes with anything actually interactive */
+  /* Explicit and load-bearing, not decorative: this is what guarantees
+     the watermark can NEVER intercept a click/tap, regardless of its
+     position at any instant during the animation. Every overlay bug
+     found in earlier sessions came from an element that COULD have had
+     this property but didn't — set explicitly here from the start. */
+  pointer-events: none;
+  user-select: none;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text);
+  opacity: 0.08;
+  white-space: nowrap;
+  /* Two independent animations, different periods (23s / 17s) driving
+     X and Y separately — this is what makes the path read as an
+     organic zigzag rather than an obvious repeating loop, without
+     needing any JavaScript or randomness at all. */
+  animation: watermark-drift-x 23s ease-in-out infinite, watermark-drift-y 17s ease-in-out infinite;
+}
+
+@keyframes watermark-drift-x {
+  0% { left: 4vw; }
+  25% { left: 70vw; }
+  50% { left: 40vw; }
+  75% { left: 85vw; }
+  100% { left: 4vw; }
+}
+
+@keyframes watermark-drift-y {
+  0% { top: 12vh; }
+  30% { top: 60vh; }
+  55% { top: 30vh; }
+  80% { top: 78vh; }
+  100% { top: 12vh; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .exam-watermark { animation: none; top: 12vh; left: 4vw; }
+}
+
+/* =========================================================
+   IMAGE ZOOM OVERLAY
+   ========================================================= */
+.image-zoom-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 320; /* above section-transition-overlay (300) — zoom should never be hidden behind a transition */
+  background: rgba(0, 0, 0, 0.92);
+  /* touch-action:none is load-bearing, not optional — without it the
+     browser's own native pinch-to-zoom-the-page gesture competes with
+     imageZoom.js's transform-based zoom, which is exactly what makes
+     pinch-zoom feel janky instead of smooth. */
+  touch-action: none;
+  overflow: hidden;
+}
+/* Same [hidden]-vs-display guard this project standardized on after a
+   real production bug (see .section-transition-overlay's own comment
+   above, and css/style.css's global [hidden]{display:none!important}
+   backstop) — belt-and-suspenders here specifically because this
+   overlay is full-viewport and genuinely would block every click
+   underneath it if [hidden] ever failed to apply. */
+.image-zoom-overlay:not([hidden]) { display: flex; align-items: center; justify-content: center; }
+
+.image-zoom-img {
+  max-width: 92vw;
+  max-height: 92vh;
+  touch-action: none;
+  will-change: transform;
+  transition: transform 0.05s linear; /* smooths tiny jitter between touchmove events without adding perceptible lag */
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.image-zoom-close-btn {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top, 16px));
+  right: max(16px, env(safe-area-inset-right, 16px));
+  z-index: 321;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.image-zoom-close-btn:hover { background: rgba(255, 255, 255, 0.25); }
+
+/* Hints that the inline images are tappable — the <img> itself keeps
+   pointer-events:none (unchanged, protects against blocking nearby
+   clicks — see that rule's own existing comment); the zoom tap listener
+   is attached to these WRAPPER elements instead in exam.js, which still
+   receive the click since the img inside is excluded from hit-testing. */
+.question-image-wrap, .group-media-wrap { cursor: zoom-in; }

@@ -7,10 +7,10 @@
  * this file only renders them, it never recalculates scoring itself, so
  * there's exactly one place the scoring logic lives.
  */
-import { loadResult } from "./storage.js?v=6";
+import { loadResult } from "./storage.js?v=7";
 import { supabase } from "./supabaseClient.js?v=1";
 import { requireAuth } from "./auth.js?v=4";
-import { hidePageLoader, initThemeToggle, stampYear, getQueryParam } from "./utils.js?v=4";
+import { hidePageLoader, initThemeToggle, stampYear, getQueryParam } from "./utils.js?v=5";
 
 const els = {
   darkModeToggle: document.getElementById("darkModeToggle"),

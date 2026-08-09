@@ -130,3 +130,24 @@ export function stampYear() {
   const el = document.getElementById("year");
   if (el) el.textContent = String(new Date().getFullYear());
 }
+
+/**
+ * Registers sw-assets.js — a narrow-scope Service Worker that only
+ * caches external R2 image/audio assets (see that file's own header
+ * comment for exactly what it does and doesn't touch). Called here,
+ * at module load, because this file is already imported by every page
+ * on the site, student and admin alike — one registration point covers
+ * everything without touching each page's own controller. Resolved via
+ * import.meta.url (this file's own location) rather than a hardcoded
+ * path, so it works correctly regardless of whether the importing page
+ * is a root page or under /admin/, and regardless of the site's actual
+ * deployed subpath (e.g. GitHub Pages' /jft-mock-tests/). Registering
+ * an already-registered Service Worker is a harmless no-op, so this is
+ * safe to run on every page load.
+ */
+if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+  navigator.serviceWorker.register(new URL("../sw-assets.js", import.meta.url)).catch(() => {
+    // Non-fatal — the app works identically without it, just without
+    // the R2 asset caching benefit. Never let this break page load.
+  });
+}
