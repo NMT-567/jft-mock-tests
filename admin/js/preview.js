@@ -5,7 +5,7 @@
  * correct answer highlighted — reusing js/groupRenderer.js so this can
  * never visually drift from what students actually see in js/exam.js.
  */
-import { buildSharedBlock, buildQuestionBlock } from "../../js/groupRenderer.js?v=6";
+import { buildSharedBlock, buildQuestionBlock } from "../../js/groupRenderer.js?v=7";
 import { flattenDraftQuestions } from "./export.js?v=8";
 import { resolveGroupQuestions } from "./questionBank.js?v=4";
 

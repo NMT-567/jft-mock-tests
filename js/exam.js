@@ -13,7 +13,7 @@ import { bindArrowKeyNavigation, resolveJumpQuestionId, bindSwipeToClose } from 
 import { saveSession, loadSession, clearSession, saveResult, startOrResumeAttempt, submitAttemptServerSide } from "./storage.js?v=7";
 import { requireAuth } from "./auth.js?v=4";
 import { hidePageLoader, initThemeToggle, debounce } from "./utils.js?v=5";
-import { buildSharedBlock, buildQuestionBlock } from "./groupRenderer.js?v=6";
+import { buildSharedBlock, buildQuestionBlock } from "./groupRenderer.js?v=7";
 
 import {
   lockdownInputSurface,
