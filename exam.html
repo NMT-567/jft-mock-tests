@@ -6,7 +6,7 @@
 <title>Exam in Progress | NMT CBT</title>
 <link rel="icon" href="assets/icons/logo.svg" type="image/svg+xml" />
 <link rel="stylesheet" href="css/style.css?v=8" />
-<link rel="stylesheet" href="css/exam.css?v=13" />
+<link rel="stylesheet" href="css/exam.css?v=14" />
 <link rel="stylesheet" href="css/responsive.css?v=6" />
 </head>
 <body class="exam-body no-select">
@@ -198,13 +198,17 @@
     <button type="button" class="btn btn-primary btn-sm" id="reenterFullscreenBtn">Re-enter Fullscreen</button>
   </div>
 
-  <!-- SECURITY: devtools warning -->
-  <dialog id="devtoolsWarningModal" class="modal">
-    <div class="modal-body">
-      <h2>Developer Tools Detected</h2>
-      <p id="devtoolsWarningText">Developer tools were detected. This is not permitted during the exam. Continued use may end your session automatically.</p>
-      <div class="modal-actions">
-        <button type="button" class="btn btn-primary" id="devtoolsWarningDismissBtn">I Understand</button>
+  <!-- SECURITY: generic exam-security warning shown to students (currently triggered by the devtools heuristic — element/JS-variable names kept as-is internally; only the STUDENT-FACING text changed, per the requirement to never expose which detection method fired). -->
+  <dialog id="devtoolsWarningModal" class="modal exam-security-modal" aria-labelledby="devtoolsWarningTitle" aria-describedby="devtoolsWarningText" aria-modal="true">
+    <div class="modal-body exam-security-modal-body">
+      <div class="exam-security-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5z"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16.5" x2="12" y2="16.51"/></svg>
+      </div>
+      <h2 id="devtoolsWarningTitle">Exam Security Warning</h2>
+      <p class="exam-security-modal-intro">Please return to the exam window to continue.</p>
+      <p id="devtoolsWarningText">Your exam session is currently paused because the exam security requirements were interrupted.</p>
+      <div class="modal-actions exam-security-modal-actions">
+        <button type="button" class="btn btn-primary exam-security-modal-btn" id="devtoolsWarningDismissBtn">Return to Exam</button>
       </div>
     </div>
   </dialog>
@@ -220,6 +224,6 @@
     </div>
   </dialog>
 
-  <script type="module" src="js/exam.js?v=24"></script>
+  <script type="module" src="js/exam.js?v=25"></script>
 </body>
 </html>

@@ -589,3 +589,62 @@
    ========================================================= */
 .exam-start-notice-list { text-align: left; margin: 12px 0; padding-left: 4px; list-style: none; }
 .exam-start-notice-list li { padding: 4px 0; font-size: 0.9rem; }
+
+/* =========================================================
+   EXAM SECURITY WARNING MODAL — polished, student-facing.
+   Scoped entirely to this one dialog (kept alongside the
+   shared .modal class, not replacing it) so every other
+   dialog in the app (submit confirm, section complete, exam
+   start notice, etc.) is completely unaffected — this is
+   additive styling, not a redesign of the shared modal system.
+   ========================================================= */
+.exam-security-modal {
+  max-width: 420px;
+  width: calc(100% - 32px);
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+}
+.exam-security-modal-body {
+  text-align: center;
+  padding: 32px 24px calc(28px + env(safe-area-inset-bottom, 0));
+}
+.exam-security-modal-body h2 { font-size: 1.15rem; margin: 0 0 8px; }
+.exam-security-modal-intro { margin: 0 0 6px; font-weight: 600; }
+.exam-security-modal-body #devtoolsWarningText { color: var(--color-text-muted); font-size: 0.92rem; margin: 0 0 4px; }
+.exam-security-modal-actions { justify-content: center; margin-top: 22px; }
+.exam-security-modal-btn {
+  width: 100%; /* large, easy to tap on mobile — .btn already carries the 48px min-height touch target */
+  font-weight: 700;
+}
+
+.exam-security-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: var(--color-warning-light);
+  color: var(--color-warning);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.exam-security-icon svg { width: 28px; height: 28px; }
+
+/* Soft, quick entrance — the shared .modal::backdrop dim/blur (css/style.css)
+   already applies instantly to every dialog; this animates the CARD itself
+   only, so no other modal's opening behavior changes. */
+@keyframes examSecurityModalIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes examSecurityIconPulse {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+.exam-security-modal[open] { animation: examSecurityModalIn 220ms ease-out; }
+.exam-security-modal[open] .exam-security-icon { animation: examSecurityIconPulse 380ms ease-out 200ms; }
+@media (prefers-reduced-motion: reduce) {
+  .exam-security-modal[open],
+  .exam-security-modal[open] .exam-security-icon { animation: none; }
+}

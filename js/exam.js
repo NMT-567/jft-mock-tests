@@ -1050,12 +1050,13 @@ function initSecurity() {
       () => {
         logSecurityEvent("devtools_shortcut_attempt");
         els.devtoolsWarningText.textContent =
-          "Developer tools were detected. This is not permitted during the exam. Continued use may end your session automatically.";
+          "Your exam session is currently paused because the exam security requirements were interrupted.";
         if (!els.devtoolsWarningModal.open) els.devtoolsWarningModal.showModal();
       },
       () => {
         logSecurityEvent("devtools_shortcut_attempt");
-        els.devtoolsWarningText.textContent = "Developer tools were detected again — your exam is being submitted automatically.";
+        els.devtoolsWarningText.textContent =
+          "Your exam is being submitted automatically because the exam security requirements were interrupted again.";
         if (!els.devtoolsWarningModal.open) els.devtoolsWarningModal.showModal();
         setTimeout(() => submitTest(true), 1500);
       }
