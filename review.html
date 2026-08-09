@@ -6,8 +6,9 @@
 <title>Review Answers | NMT CBT</title>
 <link rel="icon" href="assets/icons/logo.svg" type="image/svg+xml" />
 <link rel="stylesheet" href="css/style.css?v=8" />
-<link rel="stylesheet" href="css/review.css?v=6" />
-<link rel="stylesheet" href="css/responsive.css?v=5" />
+<link rel="stylesheet" href="css/exam.css?v=15" />
+<link rel="stylesheet" href="css/review.css?v=7" />
+<link rel="stylesheet" href="css/responsive.css?v=6" />
 </head>
 <body class="review-body">
   <div class="page-loader" id="pageLoader" aria-hidden="true">
@@ -36,10 +37,32 @@
     </div>
   </header>
 
+  <!-- ZOOM CONTROLS — same application-level zoom system as exam.html (reuses the shared .exam-zoom-controls/.zoom-btn CSS from css/exam.css and the same --exam-zoom custom property). -->
+  <div class="exam-zoom-controls no-print">
+    <button type="button" class="zoom-btn" id="reviewZoomOutBtn" aria-label="Zoom out">−</button>
+    <span class="zoom-level" id="reviewZoomLevelText" aria-live="polite">100%</span>
+    <button type="button" class="zoom-btn" id="reviewZoomInBtn" aria-label="Zoom in">+</button>
+  </div>
+
   <main class="container review-main security-protected-content">
     <div class="review-list" id="reviewList"></div>
   </main>
 
-  <script type="module" src="js/review.js?v=11"></script>
+  <!-- FULLSCREEN REQUIREMENT — same reused pattern as exam.html's examFullscreenModal (own ids/copy, same .exam-security-modal styling from css/exam.css so nothing is duplicated). Shown before the review content is usable, and again if fullscreen is exited while reviewing. -->
+  <dialog id="reviewFullscreenModal" class="modal exam-security-modal" aria-labelledby="reviewFullscreenTitle" aria-describedby="reviewFullscreenText" aria-modal="true">
+    <div class="modal-body exam-security-modal-body">
+      <div class="exam-security-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+      </div>
+      <h2 id="reviewFullscreenTitle">Review Mode</h2>
+      <p id="reviewFullscreenText">Fullscreen is required to view your answer review.</p>
+      <p class="exam-security-modal-error" id="reviewFullscreenError" hidden>Please allow fullscreen mode to continue.</p>
+      <div class="modal-actions exam-security-modal-actions">
+        <button type="button" class="btn btn-primary exam-security-modal-btn" id="reviewFullscreenBtn">Enter Fullscreen</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script type="module" src="js/review.js?v=12"></script>
 </body>
 </html>

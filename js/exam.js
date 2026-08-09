@@ -82,8 +82,13 @@ const els = {
   sectionTransitionArrowRow: document.getElementById("sectionTransitionArrowRow"),
   sectionTransitionToName: document.getElementById("sectionTransitionToName"),
 
-  fullscreenWarningBanner: document.getElementById("fullscreenWarningBanner"),
-  reenterFullscreenBtn: document.getElementById("reenterFullscreenBtn"),
+  examFullscreenModal: document.getElementById("examFullscreenModal"),
+  examFullscreenText: document.getElementById("examFullscreenText"),
+  examFullscreenError: document.getElementById("examFullscreenError"),
+  examFullscreenBtn: document.getElementById("examFullscreenBtn"),
+  zoomOutBtn: document.getElementById("zoomOutBtn"),
+  zoomInBtn: document.getElementById("zoomInBtn"),
+  zoomLevelText: document.getElementById("zoomLevelText"),
   devtoolsWarningModal: document.getElementById("devtoolsWarningModal"),
   devtoolsWarningText: document.getElementById("devtoolsWarningText"),
   devtoolsWarningDismissBtn: document.getElementById("devtoolsWarningDismissBtn"),
@@ -108,6 +113,7 @@ let state = {
 };
 let timer = null;
 let fullscreenGuard = null;
+let pendingFullscreenIsInitialStart = false;
 let lastRenderedSectionIndex = -1;
 let backButtonTrapActive = false;
 let pendingRetryIsAutoSubmit = false; // set by showSubmitFailedModal(), read by the retry button's handler
@@ -197,29 +203,77 @@ async function init() {
   renderPage(state.currentPageIndex);
   refreshPaletteAndSummary();
   bindEvents();
+  applyZoom();
   hidePageLoader();
 
   // A fresh start shows the security notice first — resuming (refresh,
   // reopening the tab) skips it, since the student already acknowledged
   // it once for this attempt and re-showing it mid-exam would just be
   // friction with no informational value. Fullscreen is requested from
-  // inside the "Start Exam" click handler specifically because a request
-  // made outside a direct user gesture is often silently denied by the
-  // browser — this is also a more reliable fix for that than the old
-  // behavior (which requested fullscreen automatically after an awaited
-  // fetch, well outside the gesture that triggered page load).
+  // inside a direct user-gesture click handler specifically because a
+  // request made outside one is often silently denied by the browser —
+  // see ensureFullscreenBeforeContinuing()/openFullscreenRequirement()
+  // below for the actual gate, which also verifies the request really
+  // succeeded rather than assuming it did.
   if (canResume) {
     startTimer();
-    beginSecuredExam();
+    beginSecuredExam(false);
   } else {
     openExamStartNotice();
   }
 }
 
-function beginSecuredExam() {
+/**
+ * @param {boolean} isInitialStart - true only for the very first "Start
+ * Exam" click (never for a resume). Passed through to
+ * ensureFullscreenBeforeContinuing(), which is the only place that
+ * decides whether/when startTimer() runs for that path — the resume
+ * path above already started its own timer, unchanged, before this is
+ * ever called, and this function must never start a second one.
+ */
+function beginSecuredExam(isInitialStart) {
   initSecurity();
-  if (fullscreenGuard) fullscreenGuard.requestFullscreen();
   initBackButtonTrap();
+  ensureFullscreenBeforeContinuing(isInitialStart);
+}
+
+/** True only when this test's admin-configured security settings actually require fullscreen AND the browser genuinely supports the Fullscreen API — a student on a browser/embedded webview without it is never permanently blocked by a requirement it has no way to satisfy. */
+function fullscreenIsRequired() {
+  return !!test.securitySettings?.requestFullscreen && document.fullscreenEnabled !== false && typeof document.documentElement.requestFullscreen === "function";
+}
+
+/** Runs once right after initSecurity() on both the initial start and every resume. If fullscreen isn't required (or the browser can't do it, or the student is already in it), nothing blocks — and for the initial-start path specifically, THIS is where the exam timer actually starts, so the exam genuinely "doesn't begin" until fullscreen is confirmed, without touching the timer's own pause/resume policy anywhere else. */
+function ensureFullscreenBeforeContinuing(isInitialStart) {
+  if (!fullscreenIsRequired() || document.fullscreenElement) {
+    if (isInitialStart) startTimer();
+    return;
+  }
+  openFullscreenRequirement(isInitialStart);
+}
+
+/** The ONE fullscreen-requirement dialog, reused for both the pre-exam gate and any mid-exam exit — text/button label set here depending on which moment this is; never mentions the underlying browser API or detection mechanism to the student. */
+function openFullscreenRequirement(isInitialStart) {
+  pendingFullscreenIsInitialStart = isInitialStart;
+  els.examFullscreenText.textContent = isInitialStart
+    ? "Fullscreen is required for this exam. Please enter fullscreen to begin your test."
+    : "Fullscreen is required to continue your exam. Please return to fullscreen to continue.";
+  els.examFullscreenBtn.textContent = isInitialStart ? "Enter Fullscreen" : "Return to Fullscreen";
+  els.examFullscreenError.hidden = true;
+  if (!els.examFullscreenModal.open) els.examFullscreenModal.showModal();
+}
+
+/** Never assumes requestFullscreen() succeeded just because it resolved — re-checks document.fullscreenElement afterward, which is the only reliable signal (rejection, silent no-op, and success all resolve the same promise shape). Only on a confirmed success does the modal close and (for the initial-start path only) the timer start. */
+async function handleFullscreenRequirementClick() {
+  els.examFullscreenError.hidden = true;
+  if (fullscreenGuard) await fullscreenGuard.requestFullscreen();
+  if (document.fullscreenElement) {
+    els.examFullscreenModal.close();
+    logSecurityEvent("fullscreen_entered");
+    if (pendingFullscreenIsInitialStart) startTimer();
+    pendingFullscreenIsInitialStart = false;
+  } else {
+    els.examFullscreenError.hidden = false;
+  }
 }
 
 function openExamStartNotice() {
@@ -931,6 +985,37 @@ function toggleFullscreen() {
 }
 
 /* =========================================================
+   ZOOM — application-level, independent of browser/native zoom
+   (which behaves inconsistently once fullscreen is active). A
+   simple in-memory value for the current exam session only, per
+   spec preference — resets to 100% on a fresh page load/session,
+   same as the rest of this app's non-persisted UI state.
+   ========================================================= */
+const ZOOM_LEVELS = [80, 90, 100, 110, 120, 130, 140, 150];
+let zoomLevel = 100;
+
+function applyZoom() {
+  document.documentElement.style.setProperty("--exam-zoom", String(zoomLevel / 100));
+  els.zoomLevelText.textContent = `${zoomLevel}%`;
+  els.zoomOutBtn.disabled = zoomLevel <= ZOOM_LEVELS[0];
+  els.zoomInBtn.disabled = zoomLevel >= ZOOM_LEVELS[ZOOM_LEVELS.length - 1];
+}
+function zoomOut() {
+  const idx = ZOOM_LEVELS.indexOf(zoomLevel);
+  if (idx > 0) {
+    zoomLevel = ZOOM_LEVELS[idx - 1];
+    applyZoom();
+  }
+}
+function zoomIn() {
+  const idx = ZOOM_LEVELS.indexOf(zoomLevel);
+  if (idx < ZOOM_LEVELS.length - 1) {
+    zoomLevel = ZOOM_LEVELS[idx + 1];
+    applyZoom();
+  }
+}
+
+/* =========================================================
    SECURITY WIRING (see security.js for what is/isn't enforceable)
    ========================================================= */
 function applyIntegrityThresholdAction() {
@@ -1030,13 +1115,8 @@ function initSecurity() {
     fullscreenGuard = initFullscreenGuard(() => {
       if (sec.detectFullscreenExit) {
         logSecurityEvent("fullscreen_exited");
-        els.fullscreenWarningBanner.hidden = false;
+        openFullscreenRequirement(false);
       }
-    });
-    els.reenterFullscreenBtn.addEventListener("click", () => {
-      els.fullscreenWarningBanner.hidden = true;
-      fullscreenGuard.requestFullscreen();
-      logSecurityEvent("fullscreen_entered");
     });
   }
 
@@ -1103,9 +1183,11 @@ function bindEvents() {
 
   els.startExamBtn.addEventListener("click", () => {
     els.examStartNoticeModal.close();
-    startTimer();
-    beginSecuredExam();
+    beginSecuredExam(true);
   });
+  els.examFullscreenBtn.addEventListener("click", handleFullscreenRequirementClick);
+  els.zoomOutBtn.addEventListener("click", zoomOut);
+  els.zoomInBtn.addEventListener("click", zoomIn);
 
   els.stayInSectionBtn.addEventListener("click", () => els.sectionCompleteModal.close());
   els.continueToNextSectionBtn.addEventListener("click", () => {

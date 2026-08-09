@@ -2,7 +2,7 @@
 
 .review-topbar-actions { display: flex; align-items: center; gap: 10px; }
 
-.review-list { display: flex; flex-direction: column; gap: 18px; }
+.review-list { display: flex; flex-direction: column; gap: 18px; zoom: var(--exam-zoom); }
 
 .review-item {
   padding: 24px;
@@ -25,6 +25,16 @@
 .review-item-badge.correct { background: var(--color-success); }
 .review-item-badge.wrong { background: var(--color-danger); }
 .review-item-badge.skipped { background: var(--color-gray); }
+
+.review-item-header-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.review-item-section {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: var(--color-surface-alt);
+  padding: 3px 10px;
+  border-radius: 999px;
+}
 
 .review-item-tags { display: flex; gap: 8px; align-items: center; }
 .review-item-tag {

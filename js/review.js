@@ -7,16 +7,24 @@ import { loadResult } from "./storage.js?v=7";
 import { supabase } from "./supabaseClient.js?v=1";
 import { requireAuth } from "./auth.js?v=4";
 import { hidePageLoader, initThemeToggle, renderRichText, escapeHtml, getQueryParam } from "./utils.js?v=5";
-import { initContentProtection } from "./security.js?v=5";
+import { initContentProtection, initFullscreenGuard } from "./security.js?v=5";
 
 const els = {
   darkModeToggle: document.getElementById("darkModeToggle"),
   backToResultBtn: document.getElementById("backToResultBtn"),
   reviewList: document.getElementById("reviewList"),
   reviewMain: document.querySelector(".review-main"),
+  reviewFullscreenModal: document.getElementById("reviewFullscreenModal"),
+  reviewFullscreenText: document.getElementById("reviewFullscreenText"),
+  reviewFullscreenError: document.getElementById("reviewFullscreenError"),
+  reviewFullscreenBtn: document.getElementById("reviewFullscreenBtn"),
+  reviewZoomOutBtn: document.getElementById("reviewZoomOutBtn"),
+  reviewZoomInBtn: document.getElementById("reviewZoomInBtn"),
+  reviewZoomLevelText: document.getElementById("reviewZoomLevelText"),
 };
 
 let result = null;
+let reviewFullscreenGuard = null;
 
 async function init() {
   initThemeToggle(els.darkModeToggle);
@@ -38,6 +46,8 @@ async function init() {
   bindEvents();
   renderList();
   if (els.reviewMain) initContentProtection(els.reviewMain);
+  applyReviewZoom();
+  ensureReviewFullscreen();
   hidePageLoader();
 }
 
@@ -54,6 +64,85 @@ function bindEvents() {
   els.backToResultBtn.addEventListener("click", () => {
     window.location.href = "result.html";
   });
+  els.reviewFullscreenBtn.addEventListener("click", handleReviewFullscreenClick);
+  els.reviewZoomOutBtn.addEventListener("click", zoomOutReview);
+  els.reviewZoomInBtn.addEventListener("click", zoomInReview);
+}
+
+/* =========================================================
+   FULLSCREEN REQUIREMENT — same reused UI pattern as exam.js's
+   examFullscreenModal (own dialog/ids, "Review Mode" copy), built
+   on the same shared initFullscreenGuard(). Applied unconditionally
+   to every review view (including admin preview) rather than tied
+   to the original test's per-test securitySettings, since the
+   stored `result` object carries no such setting and this is a
+   property of the REVIEW page itself, not the exam it came from.
+
+   Unlike the exam page, review has no live security-event log to
+   write to — the attempt is already submitted and immutable by the
+   time a student is reviewing it, and there is no existing storage
+   mechanism for a new "review fullscreen exited" event. Nothing is
+   logged here; only the exam page's existing logging is preserved.
+   ========================================================= */
+function reviewFullscreenIsAvailable() {
+  return document.fullscreenEnabled !== false && typeof document.documentElement.requestFullscreen === "function";
+}
+
+function openReviewFullscreenRequirement(isInitial) {
+  els.reviewFullscreenText.textContent = isInitial
+    ? "Fullscreen is required to view your answer review."
+    : "Fullscreen is required to continue viewing your answer review.";
+  els.reviewFullscreenBtn.textContent = isInitial ? "Enter Fullscreen" : "Return to Fullscreen";
+  els.reviewFullscreenError.hidden = true;
+  if (!els.reviewFullscreenModal.open) els.reviewFullscreenModal.showModal();
+}
+
+async function handleReviewFullscreenClick() {
+  els.reviewFullscreenError.hidden = true;
+  if (reviewFullscreenGuard) await reviewFullscreenGuard.requestFullscreen();
+  if (document.fullscreenElement) {
+    els.reviewFullscreenModal.close();
+  } else {
+    els.reviewFullscreenError.hidden = false;
+  }
+}
+
+/** Called once the review content has been rendered — a browser/webview
+ * without Fullscreen API support is never permanently blocked from a
+ * requirement it has no way to satisfy. */
+function ensureReviewFullscreen() {
+  if (!reviewFullscreenIsAvailable()) return;
+  reviewFullscreenGuard = initFullscreenGuard(() => openReviewFullscreenRequirement(false));
+  if (!document.fullscreenElement) openReviewFullscreenRequirement(true);
+}
+
+/* =========================================================
+   ZOOM — same application-level system as exam.js, scoped to
+   .review-list only (css/review.css) via the shared --exam-zoom
+   custom property (css/exam.css, now loaded on this page too).
+   ========================================================= */
+const REVIEW_ZOOM_LEVELS = [80, 90, 100, 110, 120, 130, 140, 150];
+let reviewZoomLevel = 100;
+
+function applyReviewZoom() {
+  document.documentElement.style.setProperty("--exam-zoom", String(reviewZoomLevel / 100));
+  els.reviewZoomLevelText.textContent = `${reviewZoomLevel}%`;
+  els.reviewZoomOutBtn.disabled = reviewZoomLevel <= REVIEW_ZOOM_LEVELS[0];
+  els.reviewZoomInBtn.disabled = reviewZoomLevel >= REVIEW_ZOOM_LEVELS[REVIEW_ZOOM_LEVELS.length - 1];
+}
+function zoomOutReview() {
+  const idx = REVIEW_ZOOM_LEVELS.indexOf(reviewZoomLevel);
+  if (idx > 0) {
+    reviewZoomLevel = REVIEW_ZOOM_LEVELS[idx - 1];
+    applyReviewZoom();
+  }
+}
+function zoomInReview() {
+  const idx = REVIEW_ZOOM_LEVELS.indexOf(reviewZoomLevel);
+  if (idx < REVIEW_ZOOM_LEVELS.length - 1) {
+    reviewZoomLevel = REVIEW_ZOOM_LEVELS[idx + 1];
+    applyReviewZoom();
+  }
 }
 
 function renderList() {
@@ -113,11 +202,19 @@ function renderReviewItem(answer, index) {
     : "";
 
   const bookmarkTag = answer.bookmarked ? `<span class="review-item-tag">Bookmarked</span>` : "";
+  // sectionTitle is already on every stored answer (submit-attempt's
+  // computeResult() sets it per-question) — just wasn't rendered here before.
+  const sectionHtml = answer.sectionTitle
+    ? `<span class="review-item-section">${escapeHtml(answer.sectionTitle)}</span>`
+    : "";
 
   return `
     <article class="card review-item">
       <div class="review-item-header">
-        <span class="review-item-badge ${statusClass}">Q${questionNumber} · ${statusLabel}</span>
+        <div class="review-item-header-left">
+          <span class="review-item-badge ${statusClass}">Q${questionNumber} · ${statusLabel}</span>
+          ${sectionHtml}
+        </div>
         <div class="review-item-tags">${bookmarkTag}</div>
       </div>
       ${passageHtml}

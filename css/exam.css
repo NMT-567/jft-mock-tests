@@ -491,34 +491,9 @@
 }
 .palette-summary strong { display: block; font-size: 1.05rem; color: var(--color-text); }
 
-/* =========================================================
-   SECURITY OVERLAYS
-   ========================================================= */
-.security-banner {
-  position: fixed;
-  top: var(--header-height);
-  left: 12px;
-  right: 12px;
-  z-index: 95;
-  background: var(--color-danger-light);
-  color: var(--color-danger);
-  border: 1px solid var(--color-danger);
-  border-radius: var(--radius-md);
-  padding: 12px 16px;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 0.85rem;
-  flex-wrap: wrap;
-  box-shadow: var(--shadow-md);
-}
-/* Same [hidden]-vs-display specificity issue as .section-transition-overlay
-   above — this one is the reported fullscreen-exit warning bug: without
-   this guard, the banner (and its "Re-enter Fullscreen" button) was
-   permanently visible and fixed near the top of the exam from page
-   load, regardless of actual fullscreen state, because [hidden] never
-   took effect. */
-.security-banner:not([hidden]) { display: flex; }
+/* .btn-sm is used by admin/editor.html and admin/preview.html's own
+   buttons (both load this shared exam.css) — kept even though nothing
+   on the student exam page itself uses it anymore. */
 .btn-sm { padding: 8px 14px; font-size: 0.82rem; min-height: 36px; }
 
 /* =========================================================
@@ -648,3 +623,55 @@
   .exam-security-modal[open],
   .exam-security-modal[open] .exam-security-icon { animation: none; }
 }
+.exam-security-modal-error {
+  color: var(--color-danger);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 4px 0 0;
+}
+
+/* =========================================================
+   ZOOM CONTROLS — compact, subtle, scrolls WITH the content
+   (deliberately not fixed) so it never competes with the
+   already-tight header row or the bottom nav. Scales ONLY the
+   question content via the CSS `zoom` property on one wrapper —
+   deliberately not `transform: scale`, which can break scroll
+   position, click coordinates, and fixed-layout children. `zoom`
+   reflows the box itself rather than repainting a scaled image,
+   so none of those issues apply, and everything outside
+   #groupContent (header, section tabs, bottom nav) is untouched.
+   ========================================================= */
+:root { --exam-zoom: 1; }
+.exam-zoom-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 6px 0;
+}
+.zoom-btn {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.zoom-btn:active { background: var(--color-surface-alt); }
+.zoom-btn:disabled { opacity: 0.4; }
+.zoom-level {
+  min-width: 48px;
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+#groupContent { zoom: var(--exam-zoom); }
