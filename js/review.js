@@ -7,11 +7,13 @@ import { loadResult } from "./storage.js?v=7";
 import { supabase } from "./supabaseClient.js?v=1";
 import { requireAuth } from "./auth.js?v=4";
 import { hidePageLoader, initThemeToggle, renderRichText, escapeHtml, getQueryParam } from "./utils.js?v=5";
+import { initContentProtection } from "./security.js?v=5";
 
 const els = {
   darkModeToggle: document.getElementById("darkModeToggle"),
   backToResultBtn: document.getElementById("backToResultBtn"),
   reviewList: document.getElementById("reviewList"),
+  reviewMain: document.querySelector(".review-main"),
 };
 
 let result = null;
@@ -35,6 +37,7 @@ async function init() {
 
   bindEvents();
   renderList();
+  if (els.reviewMain) initContentProtection(els.reviewMain);
   hidePageLoader();
 }
 
@@ -59,10 +62,19 @@ function renderList() {
     return;
   }
 
-  els.reviewList.innerHTML = result.answers.map(renderReviewItem).join("");
+  els.reviewList.innerHTML = result.answers.map((answer, index) => renderReviewItem(answer, index)).join("");
 }
 
-function renderReviewItem(answer) {
+function renderReviewItem(answer, index) {
+  // answer.order is not currently present on stored results (the
+  // submit-attempt Edge Function's detailedAnswers never set it) — this
+  // was the cause of "Qundefined". Falling back to the item's own
+  // position (index+1) is safe: detailedAnswers is always built by
+  // iterating sections→groups→questions in the test's fixed array
+  // order, the exact same traversal loader.js uses for its own
+  // order:globalIndex+1 numbering during the exam — so index+1 here
+  // matches the question number the student actually saw.
+  const questionNumber = answer.order ?? index + 1;
   const statusClass = answer.givenOption === null ? "skipped" : answer.isCorrect ? "correct" : "wrong";
   const statusLabel = answer.givenOption === null ? "Skipped" : answer.isCorrect ? "Correct" : "Wrong";
 
@@ -105,7 +117,7 @@ function renderReviewItem(answer) {
   return `
     <article class="card review-item">
       <div class="review-item-header">
-        <span class="review-item-badge ${statusClass}">Q${answer.order} · ${statusLabel}</span>
+        <span class="review-item-badge ${statusClass}">Q${questionNumber} · ${statusLabel}</span>
         <div class="review-item-tags">${bookmarkTag}</div>
       </div>
       ${passageHtml}

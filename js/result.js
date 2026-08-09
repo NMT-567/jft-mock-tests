@@ -11,8 +11,10 @@ import { loadResult } from "./storage.js?v=7";
 import { supabase } from "./supabaseClient.js?v=1";
 import { requireAuth } from "./auth.js?v=4";
 import { hidePageLoader, initThemeToggle, stampYear, getQueryParam } from "./utils.js?v=5";
+import { initContentProtection } from "./security.js?v=5";
 
 const els = {
+  resultMain: document.querySelector(".result-main"),
   darkModeToggle: document.getElementById("darkModeToggle"),
   resultTitleJa: document.getElementById("resultTitleJa"),
   resultTitleEn: document.getElementById("resultTitleEn"),
@@ -32,7 +34,6 @@ const els = {
   resultMessageEn: document.getElementById("resultMessageEn"),
   sectionResultsList: document.getElementById("sectionResultsList"),
   reviewAnswersBtn: document.getElementById("reviewAnswersBtn"),
-  printResultsBtn: document.getElementById("printResultsBtn"),
   returnHomeBtn: document.getElementById("returnHomeBtn"),
 };
 
@@ -74,13 +75,13 @@ async function init() {
   if (!result) {
     els.resultTestMeta.textContent = "No completed attempt found.";
     els.reviewAnswersBtn.disabled = true;
-    els.printResultsBtn.disabled = true;
     hidePageLoader();
     return;
   }
 
   render(result);
   bindEvents();
+  if (els.resultMain) initContentProtection(els.resultMain);
   hidePageLoader();
 }
 
@@ -194,9 +195,6 @@ function bindEvents() {
     // same attempt (?attemptId=...) and skip the auth gate the same way
     // this page did (?adminPreview=1) — see review.js's init().
     window.location.href = `review.html${window.location.search}`;
-  });
-  els.printResultsBtn.addEventListener("click", () => {
-    window.print();
   });
   els.returnHomeBtn.addEventListener("click", () => {
     window.location.href = "index.html";

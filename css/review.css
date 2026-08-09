@@ -76,3 +76,22 @@
 .review-explanation strong { color: var(--color-text); }
 
 .review-empty { text-align: center; color: var(--color-text-muted); padding: 60px 20px; }
+
+/* =========================================================
+   PRINT REDACTION — review content (student's answers, correct
+   answers, explanations) is the most sensitive page in the app;
+   Ctrl+P is intercepted as a keyboard shortcut (js/security.js), this
+   covers the browser's own print menu, which JS can't block. Same
+   idiom as css/exam.css's .print-redacted-message.
+   ========================================================= */
+.print-redacted-message { display: none; }
+@media print {
+  body.review-body > *:not(.print-redacted-message) { display: none !important; }
+  .print-redacted-message {
+    display: block !important;
+    padding: 60px 20px;
+    text-align: center;
+    font-size: 1.1rem;
+    color: #000;
+  }
+}

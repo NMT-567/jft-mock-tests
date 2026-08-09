@@ -416,3 +416,25 @@ html[data-theme="dark"] .icon-moon { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .exam-watermark { animation: none; }
 }
+
+/* =========================================================
+   SECURITY-PROTECTED CONTENT — used on result.html's/review.html's
+   main content container (not document.body) so navigation, the
+   dark-mode toggle, and other page buttons outside that container are
+   never affected. user-select:none only blocks drag-selecting text; it
+   does not disable clicks, so buttons that happen to live inside a
+   protected container (there are none currently) would still work.
+   The actual copy/cut/context-menu/drag prevention is JS
+   (js/security.js's initContentProtection, scoped to the same
+   container) — this rule only handles the visual/selection half.
+   ========================================================= */
+.security-protected-content {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+.security-protected-content img,
+.security-protected-content audio {
+  -webkit-user-drag: none;
+}

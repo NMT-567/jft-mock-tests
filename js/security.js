@@ -130,6 +130,49 @@ export function blockKeyboardShortcuts() {
 }
 
 /**
+ * Reusable content-protection wrapper for pages that need the exam's
+ * anti-copy/anti-selection posture WITHOUT the exam-only mechanics
+ * (fullscreen enforcement, devtools auto-submit, tab-switch violation
+ * counting) — currently used by result.js and review.js. Deliberately a
+ * thin composition of lockdownInputSurface() + blockKeyboardShortcuts(),
+ * not a second implementation of either — see the SECURITY OVERLAY
+ * SAFETY discipline in the module header: nothing here renders an
+ * overlay of any kind, so there is nothing that can end up swallowing
+ * clicks the way earlier sessions' overlay bugs did.
+ *
+ * `root` should be the specific content container to protect (e.g. the
+ * page's <main>), NOT document.body — this keeps the header/nav/buttons
+ * outside the lockdown so they're never affected. blockKeyboardShortcuts
+ * is inherently document-wide (keyboard shortcuts aren't scoped to an
+ * element) and is shared with the exam page's own call to it, not
+ * duplicated.
+ *
+ * Returns a single teardown function.
+ */
+export function initContentProtection(root, {
+  disableSelection = true,
+  disableCopy = true,
+  disableCut = true,
+  disableContextMenu = true,
+  blockShortcuts = true,
+} = {}) {
+  const teardownInput = lockdownInputSurface(root, {
+    select_attempt: disableSelection,
+    copy_attempt: disableCopy,
+    cut_attempt: disableCut,
+    context_menu_attempt: disableContextMenu,
+    // Same tie-breaking rule exam.js uses: dragging content out isn't its
+    // own toggle, it rides on whichever of selection/copy is enabled.
+    drag_attempt: disableSelection || disableCopy,
+  });
+  const teardownShortcuts = blockShortcuts ? blockKeyboardShortcuts() : () => {};
+  return () => {
+    teardownInput();
+    teardownShortcuts();
+  };
+}
+
+/**
  * Request fullscreen and warn (via callback) if the student exits it.
  * Returns { requestFullscreen, teardown }.
  */

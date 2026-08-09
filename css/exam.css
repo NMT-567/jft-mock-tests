@@ -41,26 +41,35 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 16px;
+  gap: 10px;
+  padding: 7px 14px;
 }
 .exam-progress-text {
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: var(--color-text);
+  /* Guard against a long "Question 100 / 100" string on a 320px phone
+     ever forcing the row (and the page) wider than the viewport —
+     truncates instead of overflowing. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .timer {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   background: var(--color-surface-alt);
   border-radius: 999px;
-  padding: 6px 12px;
+  padding: 5px 10px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--color-text);
   border: 1px solid var(--color-border);
-  font-size: 0.95rem;
+  font-size: 0.85rem;
+  flex-shrink: 0; /* the timer never gets squeezed — .exam-progress-text truncates instead */
 }
 .timer .icon { width: 16px; height: 16px; }
 .timer.timer-warning { background: var(--color-warning-light); color: var(--color-warning); border-color: var(--color-warning); }
@@ -75,7 +84,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 16px;
+  padding: 6px 14px;
   gap: 10px;
 }
 .exam-test-title {
@@ -86,8 +95,8 @@
   text-overflow: ellipsis;
   min-width: 0;
 }
-.exam-util-actions { display: flex; gap: 8px; flex-shrink: 0; }
-.icon-btn-sm { width: 36px; height: 36px; min-height: 36px; }
+.exam-util-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.icon-btn-sm { width: 40px; height: 40px; min-height: 40px; }
 
 /* =========================================================
    SECTION BANNER — shown once whenever the current group
@@ -122,7 +131,7 @@
 .exam-section-progress {
   display: flex;
   gap: 6px;
-  padding: 8px 12px;
+  padding: 6px 12px;
   overflow-x: auto;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface);
@@ -304,10 +313,10 @@
 }
 
 .question-text {
-  font-size: 1.15rem;
+  font-size: 1.2rem;
   font-weight: 600;
   margin-bottom: 16px;
-  line-height: 1.6;
+  line-height: 1.55;
 }
 
 .question-image-wrap {
@@ -328,7 +337,7 @@
   align-items: center;
   gap: 14px;
   padding: 16px;
-  min-height: var(--touch-target-min);
+  min-height: 56px;
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);

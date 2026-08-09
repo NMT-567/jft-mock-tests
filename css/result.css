@@ -156,14 +156,23 @@
 .result-actions .btn { width: 100%; }
 
 /* =========================================================
-   PRINT — a clean official-looking score report; hide chrome
+   PRINT REDACTION — printing the result report is no longer offered
+   as a feature (the Print Results button was removed); if a print is
+   ever triggered anyway via the browser's own menu (Ctrl+P is already
+   intercepted as a keyboard shortcut — see js/security.js), none of
+   the real result content reaches the printed page. Same idiom as
+   css/exam.css's .print-redacted-message.
    ========================================================= */
+.print-redacted-message { display: none; }
 @media print {
-  .no-print { display: none !important; }
-  body { background: #fff; }
-  .result-main { max-width: 100%; padding: 0; }
-  .card, .jft-score-panel, .jft-section-results { border: 1px solid #999; box-shadow: none; break-inside: avoid; }
-  .score-range-fail-zone, .score-range-pass-zone, .section-result-bar-fill { opacity: 1 !important; }
+  body.result-body > *:not(.print-redacted-message) { display: none !important; }
+  .print-redacted-message {
+    display: block !important;
+    padding: 60px 20px;
+    text-align: center;
+    font-size: 1.1rem;
+    color: #000;
+  }
 }
 
 /* =========================================================

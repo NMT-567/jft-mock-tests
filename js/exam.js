@@ -21,7 +21,7 @@ import {
   initFullscreenGuard,
   startDevToolsHeuristic,
   initVisibilityGuard,
-} from "./security.js?v=4";
+} from "./security.js?v=5";
 
 const els = {
   examTestTitle: document.getElementById("examTestTitle"),

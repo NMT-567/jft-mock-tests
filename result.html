@@ -5,14 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Result | NMT CBT</title>
 <link rel="icon" href="assets/icons/logo.svg" type="image/svg+xml" />
-<link rel="stylesheet" href="css/style.css?v=6" />
-<link rel="stylesheet" href="css/result.css?v=4" />
-<link rel="stylesheet" href="css/responsive.css?v=4" />
+<link rel="stylesheet" href="css/style.css?v=7" />
+<link rel="stylesheet" href="css/result.css?v=5" />
+<link rel="stylesheet" href="css/responsive.css?v=5" />
 </head>
-<body>
+<body class="result-body">
   <div class="page-loader" id="pageLoader" aria-hidden="true">
     <div class="spinner"></div>
   </div>
+
+  <!-- PRINT REDACTION fallback: Ctrl+P is intercepted as a keyboard shortcut (js/security.js), but the browser's own File > Print menu can't be blocked by JS — if a print is ever actually triggered, this replaces real content with a plain notice. Same pattern as css/exam.css's .print-redacted-message. -->
+  <div class="print-redacted-message">This page's content cannot be printed.</div>
 
   <!-- WATERMARK: same repeated whole-screen pattern as the exam page (shared CSS in css/style.css). pointer-events:none is explicit and load-bearing — must never be able to intercept a click, no exceptions. -->
   <div class="exam-watermark no-print" aria-hidden="true"></div>
@@ -30,7 +33,7 @@
     </div>
   </header>
 
-  <main class="container result-main">
+  <main class="container result-main security-protected-content">
     <section class="jft-result-intro">
       <h1 class="jft-result-title-ja" id="resultTitleJa">試験の結果をお知らせします。</h1>
       <p class="jft-result-title-en" id="resultTitleEn">Your test results are as follows.</p>
@@ -86,7 +89,6 @@
 
     <div class="result-actions no-print">
       <button type="button" class="btn btn-primary btn-lg" id="reviewAnswersBtn">Review Answers</button>
-      <button type="button" class="btn btn-secondary btn-lg" id="printResultsBtn">Print Results</button>
       <button type="button" class="btn btn-ghost btn-lg" id="returnHomeBtn">Return Home</button>
     </div>
   </main>
@@ -95,6 +97,6 @@
     <p>&copy; <span id="year"></span> Nihongo Mock Test.</p>
   </footer>
 
-  <script type="module" src="js/result.js?v=7"></script>
+  <script type="module" src="js/result.js?v=8"></script>
 </body>
 </html>
