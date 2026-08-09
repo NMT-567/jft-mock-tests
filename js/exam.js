@@ -76,10 +76,6 @@ const els = {
   stayInSectionBtn: document.getElementById("stayInSectionBtn"),
   continueToNextSectionBtn: document.getElementById("continueToNextSectionBtn"),
 
-  sectionIncompleteModal: document.getElementById("sectionIncompleteModal"),
-  sectionIncompleteMessage: document.getElementById("sectionIncompleteMessage"),
-  sectionIncompleteGoBackBtn: document.getElementById("sectionIncompleteGoBackBtn"),
-
   sectionTransitionOverlay: document.getElementById("sectionTransitionOverlay"),
   sectionTransitionFromName: document.getElementById("sectionTransitionFromName"),
   sectionTransitionLabel: document.getElementById("sectionTransitionLabel"),
@@ -531,17 +527,16 @@ function goPrev() {
 function goNext() {
   const currentGroup = test.pages[state.currentPageIndex];
 
-  // Any required question on the page currently being LEFT must be
-  // answered before advancing. Previously this was only checked once,
-  // at the very end of the whole section — a student could click
-  // through several required-but-blank pages first and only get
-  // stopped at the last one. Same warning dialog as before (now
-  // scope-neutral wording, see exam.html), just triggered per-page.
+  // Any required question on the page currently being LEFT blocks
+  // advancing — but silently: no popup, no modal, no toast, no visual
+  // feedback of any kind (per explicit owner request). The student just
+  // stays on the current question, exactly as if Next did nothing,
+  // until they answer it. This mirrors the listening-group completion
+  // check right below, which already worked this way.
   const missingOnThisPage = findMissingRequiredQuestions(state.currentSectionIndex).filter(
     (entry) => entry.pageIndex === state.currentPageIndex
   );
   if (missingOnThisPage.length > 0) {
-    openSectionIncompleteWarning(missingOnThisPage.length);
     return;
   }
 
@@ -563,13 +558,18 @@ function goNext() {
     return;
   }
 
-  // At the last page of the current section — this is the one-way gate.
-  const missingRequired = findMissingRequiredQuestions(state.currentSectionIndex);
-  if (missingRequired.length > 0) {
-    openSectionIncompleteWarning(missingRequired.length);
-    return;
-  }
-
+  // Previously, reaching the last page of a section re-checked the WHOLE
+  // section and popped the same "Required Question" warning if an
+  // earlier page's required question had been skipped (e.g. via a
+  // palette jump straight to the last page). That popup is removed
+  // per the owner's explicit request, and — unlike the per-page check
+  // above — it is NOT replaced with a silent block: the student would
+  // have no visible cause and no way to fix a page they've already left.
+  // The real safety net for a truly-skipped required question still
+  // exists, untouched, at actual final submission time: openSubmitConfirm()
+  // below shows its own inline required-question list and disables the
+  // Submit button — a genuinely different, already-existing mechanism,
+  // not this popup.
   const isFinalSection = state.currentSectionIndex === test.sections.length - 1;
   if (isFinalSection) {
     openSubmitConfirm();
@@ -595,11 +595,6 @@ function advanceToNextSection() {
 function openSectionCompleteConfirm() {
   els.sectionCompleteName.textContent = test.sections[state.currentSectionIndex].title;
   els.sectionCompleteModal.showModal();
-}
-
-function openSectionIncompleteWarning(count) {
-  els.sectionIncompleteMessage.textContent = `You still have ${count} required question${count === 1 ? "" : "s"} unanswered.`;
-  els.sectionIncompleteModal.showModal();
 }
 
 /** Brief, non-interactive confirmation shown between "section locked" and the next section actually appearing — purely informational, per spec ~500-1200ms. */
@@ -1117,7 +1112,6 @@ function bindEvents() {
     els.sectionCompleteModal.close();
     showSectionTransition(() => advanceToNextSection());
   });
-  els.sectionIncompleteGoBackBtn.addEventListener("click", () => els.sectionIncompleteModal.close());
 
   els.devtoolsWarningDismissBtn.addEventListener("click", () => els.devtoolsWarningModal.close());
   els.visibilityWarningDismissBtn.addEventListener("click", () => els.visibilityWarningModal.close());
