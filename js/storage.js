@@ -136,8 +136,23 @@ export async function startOrResumeAttempt(userId, testId, { isAdminPreview = fa
 export async function submitAttemptServerSide(attemptId, { answers, securityEvents, autoSubmitted, studentName }) {
   if (!attemptId) return null;
   try {
+    // Explicitly attach the Authorization header rather than relying on
+    // supabase-js's implicit auto-attach behavior for functions.invoke()
+    // — confirmed via live testing that the implicit path was not
+    // sending it (a real session existed, same client instance used
+    // everywhere, yet the Edge Function received no Authorization
+    // header at all: UNAUTHORIZED_NO_AUTH_HEADER). This makes the
+    // header explicit and therefore certain, regardless of whatever
+    // internal supabase-js/esm.sh behavior caused the implicit path to
+    // fail. Session Auth Bearer is still the real user's own token —
+    // this is not a service-role/elevated-privilege call.
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData?.session?.access_token;
+    if (!accessToken) throw new Error("No active session — cannot submit.");
+
     const { data, error } = await supabase.functions.invoke("submit-attempt", {
       body: { attemptId, answers, securityEvents, autoSubmitted, studentName },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
     if (error) throw error;
     if (data?.error) throw new Error(data.error);

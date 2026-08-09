@@ -3,7 +3,7 @@
  * Controller for review.html — displays every question with the student's
  * answer, correct answer, explanation, and supports filter + search.
  */
-import { loadResult } from "./storage.js?v=5";
+import { loadResult } from "./storage.js?v=6";
 import { supabase } from "./supabaseClient.js?v=1";
 import { requireAuth } from "./auth.js?v=4";
 import { hidePageLoader, initThemeToggle, renderRichText, escapeHtml, debounce, getQueryParam } from "./utils.js?v=4";

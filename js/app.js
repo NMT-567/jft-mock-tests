@@ -8,7 +8,7 @@
  */
 import { requireAuth, signOut } from "./auth.js?v=4";
 import { supabase } from "./supabaseClient.js?v=1";
-import { hasActiveSession, loadSession, clearSession } from "./storage.js?v=5";
+import { hasActiveSession, loadSession, clearSession } from "./storage.js?v=6";
 import { hidePageLoader, initThemeToggle, stampYear, escapeHtml } from "./utils.js?v=4";
 
 const els = {
