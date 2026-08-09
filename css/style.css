@@ -60,6 +60,26 @@ html[data-theme="dark"] {
 
 * { box-sizing: border-box; }
 
+/*
+ * Global safety net for the [hidden] attribute — the equal-specificity
+ * cascade conflict that caused a real, severe bug (an always-present,
+ * full-viewport, click-blocking overlay on the exam page — see
+ * .section-transition-overlay/.security-banner's own comments in
+ * css/exam.css). Per-selector :not([hidden]) guards fix specific known
+ * cases, but this !important rule is the backstop: any future rule
+ * that declares `display` on an element also toggled via [hidden] can
+ * no longer silently defeat it, project-wide, without anyone having to
+ * remember to add a guard every single time. Verified safe against
+ * every animated show/hide in this codebase — each one removes
+ * [hidden] BEFORE its transition starts and only re-adds it AFTER the
+ * transition's setTimeout/duration has elapsed (see exam.js's
+ * openPalette()/closePalette() and the section-transition logic), so
+ * this rule can never clip a slide/fade animation mid-flight.
+ */
+[hidden] {
+  display: none !important;
+}
+
 html, body {
   margin: 0;
   padding: 0;
