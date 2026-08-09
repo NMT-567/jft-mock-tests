@@ -73,10 +73,28 @@
     </div>
   </dialog>
 
+  <dialog id="shareDialog" class="modal">
+    <div class="modal-body">
+      <h2>Share Link — <span id="shareDialogTestTitle"></span></h2>
+      <p id="shareDialogWarning" style="color:#c98a1e; font-size:0.85rem;">
+        This test is still a Draft — students who open this link won't see it until you publish it. The link itself will work correctly once you do, no need to regenerate it.
+      </p>
+      <p style="color: var(--color-text-muted); font-size:0.85rem;">
+        Anyone who opens this needs to sign in with a Google account you've approved and granted access to this specific test (or "Allow All Tests") — see <code>admin/users.html</code>. The link is safe to send directly; access is still checked when they open it.
+      </p>
+      <label class="field-label" for="shareLinkInput">Direct link to this test</label>
+      <input type="text" id="shareLinkInput" class="text-input" readonly />
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="closeShareDialogBtn">Close</button>
+        <button type="button" class="btn btn-primary" id="copyShareLinkBtn">Copy Link</button>
+      </div>
+    </div>
+  </dialog>
+
   <footer class="site-footer">
     <p>&copy; <span id="year"></span> Nihongo Mock Test Admin.</p>
   </footer>
 
-  <script type="module" src="js/tests.js?v=1"></script>
+  <script type="module" src="js/tests.js?v=2"></script>
 </body>
 </html>

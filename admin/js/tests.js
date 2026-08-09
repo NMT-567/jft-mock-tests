@@ -21,6 +21,12 @@ const els = {
   previewAsSelect: document.getElementById("previewAsSelect"),
   cancelPreviewAsBtn: document.getElementById("cancelPreviewAsBtn"),
   confirmPreviewAsBtn: document.getElementById("confirmPreviewAsBtn"),
+  shareDialog: document.getElementById("shareDialog"),
+  shareDialogTestTitle: document.getElementById("shareDialogTestTitle"),
+  shareDialogWarning: document.getElementById("shareDialogWarning"),
+  shareLinkInput: document.getElementById("shareLinkInput"),
+  copyShareLinkBtn: document.getElementById("copyShareLinkBtn"),
+  closeShareDialogBtn: document.getElementById("closeShareDialogBtn"),
 };
 
 let allTests = [];
@@ -68,6 +74,11 @@ function bindEvents() {
     window.open(url, "_blank");
     els.previewAsDialog.close();
   });
+  els.copyShareLinkBtn.addEventListener("click", copyShareLink);
+  els.closeShareDialogBtn.addEventListener("click", () => els.shareDialog.close());
+  els.shareDialog.addEventListener("click", (e) => {
+    if (e.target === els.shareDialog) els.shareDialog.close();
+  });
 }
 
 function render() {
@@ -92,6 +103,7 @@ function render() {
         <span style="color:${statusColor}; font-weight:600; text-transform:capitalize;">${test.status}</span>
       </td>
       <td style="padding:10px 8px; display:flex; gap:6px; flex-wrap:wrap;">
+        <button type="button" class="btn btn-secondary btn-sm share-btn">Share Link</button>
         <button type="button" class="btn btn-secondary btn-sm preview-btn">Preview</button>
         <button type="button" class="btn btn-secondary btn-sm preview-as-btn">Preview as User</button>
         ${test.status === "published"
@@ -101,6 +113,7 @@ function render() {
       </td>
     `;
 
+    tr.querySelector(".share-btn").addEventListener("click", () => openShareDialog(test));
     tr.querySelector(".preview-btn").addEventListener("click", () => {
       window.open(`../exam.html?testId=${encodeURIComponent(test.id)}&preview=1`, "_blank");
     });
@@ -111,6 +124,45 @@ function render() {
 
     els.testsTableBody.appendChild(tr);
   });
+}
+
+/**
+ * Builds the real, absolute, shareable link for a specific test —
+ * resolved relative to THIS page's own location (via the URL
+ * constructor), so it's correct whether this is running locally, on
+ * GitHub Pages under /jft-mock-tests/, or any other path/domain, without
+ * hardcoding any of those. Points straight at exam.html?testId=<uuid> —
+ * no preview/adminPreview flag — so a real student opening it gets the
+ * genuine access-gated flow (login if needed, "Access not approved" if
+ * not yet active, a deliberately vague error if not granted THIS test,
+ * or straight into the exam if everything checks out).
+ */
+function buildShareLink(test) {
+  return new URL(`../exam.html?testId=${encodeURIComponent(test.id)}`, window.location.href).href;
+}
+
+function openShareDialog(test) {
+  const link = buildShareLink(test);
+  els.shareDialogTestTitle.textContent = test.title;
+  els.shareLinkInput.value = link;
+  els.shareDialogWarning.hidden = test.status === "published";
+  els.shareDialog.showModal();
+  els.shareLinkInput.focus();
+  els.shareLinkInput.select();
+}
+
+async function copyShareLink() {
+  const link = els.shareLinkInput.value;
+  try {
+    await navigator.clipboard.writeText(link);
+    showToast("Link copied", "success");
+  } catch (err) {
+    // Clipboard API can fail (older browser, non-secure context, denied
+    // permission) — the input is already selected as a visible fallback,
+    // so the admin can still Ctrl+C it manually.
+    els.shareLinkInput.select();
+    showToast("Couldn't auto-copy — the link is selected, press Ctrl+C", "error");
+  }
 }
 
 function openPreviewAsDialog(testId) {
