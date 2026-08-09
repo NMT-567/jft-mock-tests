@@ -14,7 +14,7 @@ import { saveSession, loadSession, clearSession, saveResult, startOrResumeAttemp
 import { requireAuth } from "./auth.js?v=4";
 import { hidePageLoader, initThemeToggle, debounce } from "./utils.js?v=5";
 import { buildSharedBlock, buildQuestionBlock } from "./groupRenderer.js?v=6";
-import { initImageZoom } from "./imageZoom.js?v=1";
+import { initImagePinchZoom } from "./imagePinchZoom.js?v=1";
 import {
   lockdownInputSurface,
   blockKeyboardShortcuts,
@@ -31,7 +31,6 @@ const els = {
   startExamBtn: document.getElementById("startExamBtn"),
   securityToastContainer: document.getElementById("securityToastContainer"),
   adminTestModeBanner: document.getElementById("adminTestModeBanner"),
-  examWatermark: document.getElementById("examWatermark"),
   examProgressText: document.getElementById("examProgressText"),
   progressBarFill: document.getElementById("progressBarFill"),
   timerDisplay: document.getElementById("timerDisplay"),
@@ -45,9 +44,6 @@ const els = {
   examSectionProgress: document.getElementById("examSectionProgress"),
 
   groupContent: document.getElementById("groupContent"),
-  imageZoomOverlay: document.getElementById("imageZoomOverlay"),
-  imageZoomImg: document.getElementById("imageZoomImg"),
-  imageZoomCloseBtn: document.getElementById("imageZoomCloseBtn"),
 
   prevBtn: document.getElementById("prevBtn"),
   nextBtn: document.getElementById("nextBtn"),
@@ -200,11 +196,6 @@ async function init() {
   }
 
   els.examTestTitle.textContent = test.title;
-  // Includes the student's own name/email — this is what actually
-  // gives the watermark anti-leak value beyond plain branding: a
-  // leaked screenshot/photo can be traced back to whose attempt it
-  // came from.
-  els.examWatermark.textContent = `Nihongo Mock Test — ${state.studentName}`;
   renderSectionProgress();
   renderPalette(els.paletteGrid, currentSectionQuestionIndex(), jumpToQuestionId);
   renderPage(state.currentPageIndex);
@@ -1042,23 +1033,11 @@ function bindEvents() {
   els.nextBtn.addEventListener("click", goNext);
   els.fullscreenBtn.addEventListener("click", toggleFullscreen);
 
-  // Delegated on the STABLE container, not on the images themselves —
-  // groupContent's inner DOM gets rebuilt on every navigation and every
-  // answer selection (see renderGroupContent()/renderQuestionList()),
-  // so a listener attached directly to an <img> would be lost the
-  // moment that element gets recreated. A delegated listener on the
-  // never-replaced parent keeps working regardless. Targets the WRAPPER
-  // (.question-image-wrap / .group-media-wrap), not the <img> itself,
-  // because the <img> has pointer-events:none (existing, unchanged —
-  // protects against blocking nearby clicks), which means a tap
-  // "on" the image visually hit-tests to its wrapper instead.
-  const imageZoom = initImageZoom(els.imageZoomOverlay, els.imageZoomImg, els.imageZoomCloseBtn);
-  els.groupContent.addEventListener("click", (e) => {
-    const wrapper = e.target.closest(".question-image-wrap, .group-media-wrap");
-    if (!wrapper) return;
-    const img = wrapper.querySelector("img");
-    if (img) imageZoom.open(img.src, img.alt);
-  });
+  // In-place two-finger pinch-zoom on question images — no
+  // click-to-open, no overlay. See js/imagePinchZoom.js's own header
+  // comment for exactly why this is delegated on groupContent (a
+  // stable container) rather than attached to the images directly.
+  initImagePinchZoom(els.groupContent);
 
   els.paletteToggleBtn.addEventListener("click", togglePalette);
   els.sheetBackdrop.addEventListener("click", closePalette);

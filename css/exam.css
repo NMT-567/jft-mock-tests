@@ -581,107 +581,57 @@
 /* =========================================================
    WATERMARK — anti-leak deterrent, not a real security guarantee
    (same honesty standard as the rest of this project's security
-   features — a moving, semi-transparent, per-student watermark makes
-   screenshots/photos harder to crop cleanly and identifies the source
-   if one leaks, but cannot prevent leaking outright).
+   features — a repeated, whole-screen, slowly-drifting watermark
+   makes screenshots/photos harder to crop cleanly, but cannot prevent
+   leaking outright).
    ========================================================= */
 .exam-watermark {
   position: fixed;
-  top: 0;
-  left: 0;
+  inset: 0; /* whole viewport, not one small text spot — the tile below repeats across all of it */
   z-index: 40; /* above exam content, below every modal/overlay in this file (all 90+) so it never competes with anything actually interactive */
   /* Explicit and load-bearing, not decorative: this is what guarantees
-     the watermark can NEVER intercept a click/tap, regardless of its
-     position at any instant during the animation. Every overlay bug
+     the watermark can NEVER intercept a click/tap. Every overlay bug
      found in earlier sessions came from an element that COULD have had
      this property but didn't — set explicitly here from the start. */
   pointer-events: none;
   user-select: none;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--color-text);
-  opacity: 0.08;
-  white-space: nowrap;
-  /* Two independent animations, different periods (23s / 17s) driving
-     X and Y separately — this is what makes the path read as an
-     organic zigzag rather than an obvious repeating loop, without
-     needing any JavaScript or randomness at all. */
-  animation: watermark-drift-x 23s ease-in-out infinite, watermark-drift-y 17s ease-in-out infinite;
+  opacity: 0.07;
+  /* One tile contains the brand text twice already (see the SVG data
+     URI below), and background-repeat tiles THAT across the entire
+     screen — so "Nihongo Mock Test" appears many times over, exactly
+     as asked, with no JavaScript needed for the pattern itself. */
+  background-repeat: repeat;
+  background-size: 300px 170px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='170'%3E%3Ctext x='-30' y='55' transform='rotate(-25 150 85)' font-family='Arial, Helvetica, sans-serif' font-size='18' font-weight='700' fill='%23888888'%3ENihongo Mock Test%3C/text%3E%3Ctext x='-30' y='140' transform='rotate(-25 150 85)' font-family='Arial, Helvetica, sans-serif' font-size='18' font-weight='700' fill='%23888888'%3ENihongo Mock Test%3C/text%3E%3C/svg%3E");
+  /* "Changeable most slowly" — a single background-position animation
+     panning by exactly one tile's width/height over a very long
+     duration (6 minutes). Because the pan distance matches the tile
+     size exactly, the loop point is seamless — no visible jump/reset,
+     just a continuous, barely-perceptible drift of the whole pattern. */
+  animation: watermark-slow-pan 360s linear infinite;
 }
 
-@keyframes watermark-drift-x {
-  0% { left: 4vw; }
-  25% { left: 70vw; }
-  50% { left: 40vw; }
-  75% { left: 85vw; }
-  100% { left: 4vw; }
-}
-
-@keyframes watermark-drift-y {
-  0% { top: 12vh; }
-  30% { top: 60vh; }
-  55% { top: 30vh; }
-  80% { top: 78vh; }
-  100% { top: 12vh; }
+@keyframes watermark-slow-pan {
+  0% { background-position: 0 0; }
+  100% { background-position: 300px 170px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .exam-watermark { animation: none; top: 12vh; left: 4vw; }
+  .exam-watermark { animation: none; }
 }
 
 /* =========================================================
-   IMAGE ZOOM OVERLAY
+   IN-PLACE PINCH ZOOM
    ========================================================= */
-.image-zoom-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 320; /* above section-transition-overlay (300) — zoom should never be hidden behind a transition */
-  background: rgba(0, 0, 0, 0.92);
-  /* touch-action:none is load-bearing, not optional — without it the
-     browser's own native pinch-to-zoom-the-page gesture competes with
-     imageZoom.js's transform-based zoom, which is exactly what makes
-     pinch-zoom feel janky instead of smooth. */
-  touch-action: none;
-  overflow: hidden;
-}
-/* Same [hidden]-vs-display guard this project standardized on after a
-   real production bug (see .section-transition-overlay's own comment
-   above, and css/style.css's global [hidden]{display:none!important}
-   backstop) — belt-and-suspenders here specifically because this
-   overlay is full-viewport and genuinely would block every click
-   underneath it if [hidden] ever failed to apply. */
-.image-zoom-overlay:not([hidden]) { display: flex; align-items: center; justify-content: center; }
-
-.image-zoom-img {
-  max-width: 92vw;
-  max-height: 92vh;
-  touch-action: none;
+/* No new overflow:hidden needed here — both .question-image-wrap and
+   .group-media-wrap already had it (see their own rules above), which
+   turns out to be exactly what's needed: transform:scale() never
+   participates in layout/reflow to begin with, and the pre-existing
+   overflow:hidden clips any visual overflow from a zoomed-in image at
+   the wrapper's own edge — so surrounding text can never shift or have
+   a zoomed image spill onto it, at any zoom level, with no extra CSS
+   beyond what was already there. */
+.question-image-wrap img, .group-media-wrap img {
   will-change: transform;
   transition: transform 0.05s linear; /* smooths tiny jitter between touchmove events without adding perceptible lag */
-  user-select: none;
-  -webkit-user-drag: none;
 }
-
-.image-zoom-close-btn {
-  position: absolute;
-  top: max(16px, env(safe-area-inset-top, 16px));
-  right: max(16px, env(safe-area-inset-right, 16px));
-  z-index: 321;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
-  font-size: 1.1rem;
-  line-height: 1;
-  cursor: pointer;
-}
-.image-zoom-close-btn:hover { background: rgba(255, 255, 255, 0.25); }
-
-/* Hints that the inline images are tappable — the <img> itself keeps
-   pointer-events:none (unchanged, protects against blocking nearby
-   clicks — see that rule's own existing comment); the zoom tap listener
-   is attached to these WRAPPER elements instead in exam.js, which still
-   receive the click since the img inside is excluded from hit-testing. */
-.question-image-wrap, .group-media-wrap { cursor: zoom-in; }

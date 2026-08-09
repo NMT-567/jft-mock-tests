@@ -6,7 +6,7 @@
 <title>Exam in Progress | NMT CBT</title>
 <link rel="icon" href="assets/icons/logo.svg" type="image/svg+xml" />
 <link rel="stylesheet" href="css/style.css?v=5" />
-<link rel="stylesheet" href="css/exam.css?v=8" />
+<link rel="stylesheet" href="css/exam.css?v=9" />
 <link rel="stylesheet" href="css/responsive.css?v=3" />
 </head>
 <body class="exam-body no-select">
@@ -17,8 +17,8 @@
 
   <div class="admin-test-mode-banner no-print" id="adminTestModeBanner" hidden>ADMIN TEST MODE — this attempt is not saved as a real student result</div>
 
-  <!-- WATERMARK: pointer-events:none is explicit and load-bearing (see css/exam.css's comment) — this must never be able to intercept a click, no exceptions. Text is set dynamically in exam.js's init() to include the signed-in student's name for real anti-leak value, not just static branding. -->
-  <div class="exam-watermark no-print" id="examWatermark" aria-hidden="true">Nihongo Mock Test</div>
+  <!-- WATERMARK: pure CSS background pattern (see css/exam.css) — repeated "Nihongo Mock Test" tiled across the whole screen, panning very slowly. pointer-events:none is explicit and load-bearing (see that file's comment) — must never be able to intercept a click, no exceptions. -->
+  <div class="exam-watermark no-print" id="examWatermark" aria-hidden="true"></div>
 
   <!-- STICKY TOP BAR: section + progress + timer -->
   <header class="exam-topbar">
@@ -177,12 +177,6 @@
     <p class="section-transition-arrow" id="sectionTransitionArrowRow" hidden>→ <span id="sectionTransitionToName"></span></p>
   </div>
 
-  <!-- IMAGE ZOOM — opened by tapping/clicking a question image; two-finger pinch-zoom + pan, double-tap to toggle. See js/imageZoom.js. -->
-  <div class="image-zoom-overlay no-print" id="imageZoomOverlay" hidden>
-    <button type="button" class="image-zoom-close-btn" id="imageZoomCloseBtn" aria-label="Close zoomed image">✕</button>
-    <img class="image-zoom-img" id="imageZoomImg" alt="Question illustration (zoomed)" draggable="false" />
-  </div>
-
   <!-- EXAM START NOTICE — shown before the exam begins; this is also the direct user gesture the browser needs to reliably grant fullscreen (a fullscreen request made later, outside a click, is often silently denied) -->
   <dialog id="examStartNoticeModal" class="modal">
     <div class="modal-body">
@@ -227,6 +221,6 @@
     </div>
   </dialog>
 
-  <script type="module" src="js/exam.js?v=20"></script>
+  <script type="module" src="js/exam.js?v=21"></script>
 </body>
 </html>
