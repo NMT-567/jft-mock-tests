@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Result | NMT CBT</title>
 <link rel="icon" href="assets/icons/logo.svg" type="image/svg+xml" />
-<link rel="stylesheet" href="css/style.css?v=5" />
+<link rel="stylesheet" href="css/style.css?v=6" />
 <link rel="stylesheet" href="css/result.css?v=4" />
 <link rel="stylesheet" href="css/responsive.css?v=3" />
 </head>
@@ -13,6 +13,9 @@
   <div class="page-loader" id="pageLoader" aria-hidden="true">
     <div class="spinner"></div>
   </div>
+
+  <!-- WATERMARK: same repeated whole-screen pattern as the exam page (shared CSS in css/style.css). pointer-events:none is explicit and load-bearing — must never be able to intercept a click, no exceptions. -->
+  <div class="exam-watermark no-print" aria-hidden="true"></div>
 
   <header class="topbar no-print">
     <div class="topbar-inner container">

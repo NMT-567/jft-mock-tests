@@ -418,6 +418,54 @@ function renderQuestionList(group) {
   els.groupContent.appendChild(list);
 }
 
+/**
+ * Purely updates which option is marked selected for ONE question,
+ * directly on the already-rendered DOM — never removes or recreates
+ * any card, which is exactly why this is safe to call on every answer
+ * selection. renderQuestionList() above rebuilds every card from
+ * scratch (needed for genuine navigation to a new group), but a
+ * "single"-type question can have its OWN <audio> element rendered
+ * inside its card by buildQuestionBlock() (see groupRenderer.js) — a
+ * full rebuild on every selection was destroying and recreating that
+ * audio every time, restarting playback, even though the earlier fix
+ * for the SHARED group audio (buildSharedBlock, listening groups) was
+ * already correct. This function is what closes that second, real gap:
+ * it only ever toggles a class and a `checked` property on inputs that
+ * already exist, so nothing inside the card — audio, image, or
+ * otherwise — is ever destroyed by selecting an answer.
+ */
+function updateOptionSelectionInDOM(questionId, selectedOption) {
+  const card = document.getElementById(`question-anchor-${questionId}`);
+  if (!card) return;
+  card.querySelectorAll(".option-item").forEach((item) => {
+    const input = item.querySelector("input");
+    const isSelected = input && input.value === selectedOption;
+    item.classList.toggle("selected", isSelected);
+    if (input) input.checked = isSelected;
+  });
+}
+
+/** Same "never destroy an existing card" principle as above — only touches the one text hint (which contains no media), never the question cards or the shared block. */
+function updateListeningHintInDOM(group) {
+  if (group.type !== "listening_group") return;
+  const completion = computeGroupCompletion(group, state.answers);
+  const existingHint = els.groupContent.querySelector(".group-completion-hint");
+  if (completion.complete) {
+    existingHint?.remove();
+    return;
+  }
+  const text = `Answer all ${completion.total} questions in this section before continuing (${completion.answered}/${completion.total} answered).`;
+  if (existingHint) {
+    existingHint.textContent = text;
+  } else {
+    const hint = document.createElement("p");
+    hint.className = "group-completion-hint";
+    hint.textContent = text;
+    const list = els.groupContent.querySelector(".question-block-list");
+    els.groupContent.insertBefore(hint, list);
+  }
+}
+
 /* =========================================================
    STATE MUTATIONS
    ========================================================= */
@@ -427,7 +475,8 @@ function markVisited(questionId) {
 
 function selectOption(questionId, option) {
   state.answers[questionId] = option;
-  renderQuestionList(test.pages[state.currentPageIndex]);
+  updateOptionSelectionInDOM(questionId, option);
+  updateListeningHintInDOM(test.pages[state.currentPageIndex]);
   refreshPaletteAndSummary();
   autoSaveScheduled();
 }
@@ -491,7 +540,7 @@ function goNext() {
   if (currentGroup.type === "listening_group") {
     const completion = computeGroupCompletion(currentGroup, state.answers);
     if (!completion.complete) {
-      renderQuestionList(currentGroup); // refreshes the "N/M answered" hint only — never touches the audio element, so a click on Next while audio is still playing doesn't stop it
+      updateListeningHintInDOM(currentGroup); // only the "N/M answered" hint text changes here — the question cards themselves haven't changed, so there's nothing to touch, and nothing to risk destroying
       return;
     }
   }

@@ -371,3 +371,48 @@ html[data-theme="dark"] .icon-moon { display: none; }
    ========================================================= */
 .fade-in { animation: fadeIn var(--transition-base) ease both; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* =========================================================
+   WATERMARK — anti-leak deterrent, not a real security guarantee
+   (same honesty standard as the rest of this project's security
+   features — a repeated, whole-screen, slowly-drifting watermark
+   makes screenshots/photos harder to crop cleanly, but cannot prevent
+   leaking outright). Lives in this shared stylesheet (not css/exam.css)
+   specifically so it's available on every page that loads this file —
+   exam.html AND result.html both use it; review.html could too if ever
+   asked, at zero extra cost since this is already loaded there.
+   ========================================================= */
+.exam-watermark {
+  position: fixed;
+  inset: 0; /* whole viewport, not one small text spot — the tile below repeats across all of it */
+  z-index: 40; /* above ordinary page content, below every modal/overlay (all of which use z-index 90+) so it never competes with anything actually interactive */
+  /* Explicit and load-bearing, not decorative: this is what guarantees
+     the watermark can NEVER intercept a click/tap. Every overlay bug
+     found in earlier sessions came from an element that COULD have had
+     this property but didn't — set explicitly here from the start. */
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.07;
+  /* One tile contains the brand text twice already (see the SVG data
+     URI below), and background-repeat tiles THAT across the entire
+     screen — so "Nihongo Mock Test" appears many times over, exactly
+     as asked, with no JavaScript needed for the pattern itself. */
+  background-repeat: repeat;
+  background-size: 300px 170px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='170'%3E%3Ctext x='-30' y='55' transform='rotate(-25 150 85)' font-family='Arial, Helvetica, sans-serif' font-size='18' font-weight='700' fill='%23888888'%3ENihongo Mock Test%3C/text%3E%3Ctext x='-30' y='140' transform='rotate(-25 150 85)' font-family='Arial, Helvetica, sans-serif' font-size='18' font-weight='700' fill='%23888888'%3ENihongo Mock Test%3C/text%3E%3C/svg%3E");
+  /* "Changeable most slowly" — a single background-position animation
+     panning by exactly one tile's width/height over a very long
+     duration (6 minutes). Because the pan distance matches the tile
+     size exactly, the loop point is seamless — no visible jump/reset,
+     just a continuous, barely-perceptible drift of the whole pattern. */
+  animation: watermark-slow-pan 360s linear infinite;
+}
+
+@keyframes watermark-slow-pan {
+  0% { background-position: 0 0; }
+  100% { background-position: 300px 170px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .exam-watermark { animation: none; }
+}
