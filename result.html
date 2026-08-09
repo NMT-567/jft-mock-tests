@@ -6,6 +6,7 @@
 <title>Result | NMT CBT</title>
 <link rel="icon" href="assets/icons/logo.svg" type="image/svg+xml" />
 <link rel="stylesheet" href="css/style.css?v=8" />
+<link rel="stylesheet" href="css/exam.css?v=15" />
 <link rel="stylesheet" href="css/result.css?v=5" />
 <link rel="stylesheet" href="css/responsive.css?v=6" />
 </head>
@@ -93,10 +94,25 @@
     </div>
   </main>
 
+  <!-- FULLSCREEN REQUIREMENT — same reused pattern as exam.html's examFullscreenModal / review.html's reviewFullscreenModal (own ids/copy, same .exam-security-modal styling from css/exam.css so nothing is duplicated). Shown before the result content is usable, and again if fullscreen is exited while viewing. -->
+  <dialog id="resultFullscreenModal" class="modal exam-security-modal" aria-labelledby="resultFullscreenTitle" aria-describedby="resultFullscreenText" aria-modal="true">
+    <div class="modal-body exam-security-modal-body">
+      <div class="exam-security-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+      </div>
+      <h2 id="resultFullscreenTitle">Result</h2>
+      <p id="resultFullscreenText">Fullscreen is required to view your result.</p>
+      <p class="exam-security-modal-error" id="resultFullscreenError" hidden>Please allow fullscreen mode to continue.</p>
+      <div class="modal-actions exam-security-modal-actions">
+        <button type="button" class="btn btn-primary exam-security-modal-btn" id="resultFullscreenBtn">Enter Fullscreen</button>
+      </div>
+    </div>
+  </dialog>
+
   <footer class="site-footer no-print">
     <p>&copy; <span id="year"></span> Nihongo Mock Test.</p>
   </footer>
 
-  <script type="module" src="js/result.js?v=8"></script>
+  <script type="module" src="js/result.js?v=9"></script>
 </body>
 </html>

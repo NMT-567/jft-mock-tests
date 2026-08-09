@@ -11,7 +11,7 @@ import { loadResult } from "./storage.js?v=7";
 import { supabase } from "./supabaseClient.js?v=1";
 import { requireAuth } from "./auth.js?v=4";
 import { hidePageLoader, initThemeToggle, stampYear, getQueryParam } from "./utils.js?v=5";
-import { initContentProtection } from "./security.js?v=5";
+import { initContentProtection, initFullscreenGuard } from "./security.js?v=5";
 
 const els = {
   resultMain: document.querySelector(".result-main"),
@@ -35,7 +35,13 @@ const els = {
   sectionResultsList: document.getElementById("sectionResultsList"),
   reviewAnswersBtn: document.getElementById("reviewAnswersBtn"),
   returnHomeBtn: document.getElementById("returnHomeBtn"),
+  resultFullscreenModal: document.getElementById("resultFullscreenModal"),
+  resultFullscreenText: document.getElementById("resultFullscreenText"),
+  resultFullscreenError: document.getElementById("resultFullscreenError"),
+  resultFullscreenBtn: document.getElementById("resultFullscreenBtn"),
 };
+
+let resultFullscreenGuard = null;
 
 // Matches loader.js's DEFAULT_RESULT_SETTINGS — used only as a fallback for
 // attempts saved before this feature existed (no resultSettings on the
@@ -82,6 +88,7 @@ async function init() {
   render(result);
   bindEvents();
   if (els.resultMain) initContentProtection(els.resultMain);
+  ensureResultFullscreen();
   hidePageLoader();
 }
 
@@ -199,6 +206,51 @@ function bindEvents() {
   els.returnHomeBtn.addEventListener("click", () => {
     window.location.href = "index.html";
   });
+  els.resultFullscreenBtn.addEventListener("click", handleResultFullscreenClick);
+}
+
+/* =========================================================
+   FULLSCREEN REQUIREMENT — same reused pattern as exam.js's
+   examFullscreenModal / review.js's reviewFullscreenModal, built on
+   the same shared initFullscreenGuard(). Applied unconditionally to
+   every result view (including admin preview), same as review.js —
+   see that file's own comment for why this isn't tied to the
+   original test's per-test securitySettings. Previously missing
+   entirely on this page — a student could exit fullscreen right
+   after submitting and view their score without ever being asked to
+   return, even though both the exam itself and the review page
+   already enforced it.
+   ========================================================= */
+function resultFullscreenIsAvailable() {
+  return document.fullscreenEnabled !== false && typeof document.documentElement.requestFullscreen === "function";
+}
+
+function openResultFullscreenRequirement(isInitial) {
+  els.resultFullscreenText.textContent = isInitial
+    ? "Fullscreen is required to view your result."
+    : "Fullscreen is required to continue viewing your result.";
+  els.resultFullscreenBtn.textContent = isInitial ? "Enter Fullscreen" : "Return to Fullscreen";
+  els.resultFullscreenError.hidden = true;
+  if (!els.resultFullscreenModal.open) els.resultFullscreenModal.showModal();
+}
+
+async function handleResultFullscreenClick() {
+  els.resultFullscreenError.hidden = true;
+  if (resultFullscreenGuard) await resultFullscreenGuard.requestFullscreen();
+  if (document.fullscreenElement) {
+    els.resultFullscreenModal.close();
+  } else {
+    els.resultFullscreenError.hidden = false;
+  }
+}
+
+/** Called once the result content has been rendered — a browser/webview
+ * without Fullscreen API support is never permanently blocked from a
+ * requirement it has no way to satisfy. */
+function ensureResultFullscreen() {
+  if (!resultFullscreenIsAvailable()) return;
+  resultFullscreenGuard = initFullscreenGuard(() => openResultFullscreenRequirement(false));
+  if (!document.fullscreenElement) openResultFullscreenRequirement(true);
 }
 
 init();
