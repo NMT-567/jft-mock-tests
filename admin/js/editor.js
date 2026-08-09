@@ -1809,6 +1809,43 @@ function optionalMediaField(ownerId, obj, field, accept, label, size = "compact"
   return el("button", { type: "button", class: "btn btn-ghost btn-sm add-field-btn", text: `+ Add ${label}`, onclick: () => reveal(key) });
 }
 
+/**
+ * Same UI/behavior as optionalMediaField/buildUploadRowInner above, but
+ * for a field that lives on a question's own Question Bank entry
+ * rather than on the draft's group object. group.imageUrl/audioUrl (the
+ * function above) is a draft-tree field, safe to mutate in place since
+ * the whole draft gets re-saved on change — a bank entry is a
+ * *separate* localStorage store (see questionBank.js), so writes here
+ * go through saveQuestionField() to actually persist instead of just
+ * mutating a JS object nothing will save.
+ */
+function optionalQuestionMediaField(ref, entry, field, accept, label) {
+  const key = `${ref.id}:${field}`;
+  if (entry[field] || revealedFields.has(key)) {
+    return labeledMini(`${label} (optional)`, buildQuestionUploadRowInner(ref, entry, field, accept));
+  }
+  return el("button", { type: "button", class: "btn btn-ghost btn-sm add-field-btn", text: `+ Add ${label}`, onclick: () => reveal(key) });
+}
+
+function buildQuestionUploadRowInner(ref, entry, field, accept) {
+  const row = el("div", { class: "upload-row" });
+  const input = el("input", {
+    type: "file", accept: accept === "audio" ? "audio/*" : "image/*",
+    onchange: async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      saveQuestionField(ref, { [field]: await readFileAsDataUrl(file) });
+      onDraftChanged();
+    },
+  });
+  row.appendChild(input);
+  if (entry[field]) {
+    row.appendChild(accept === "audio" ? el("audio", { controls: "", src: entry[field], style: "height:32px;" }) : el("img", { class: "upload-preview", src: entry[field], alt: "Uploaded preview" }));
+    row.appendChild(el("button", { type: "button", class: "upload-clear-btn", text: "Remove", onclick: () => { saveQuestionField(ref, { [field]: null }); onDraftChanged(); } }));
+  }
+  return row;
+}
+
 function optionalExplanationField(ref, entry) {
   const key = `${ref.id}:explanation`;
   if (entry.explanation || revealedFields.has(key)) {
@@ -1907,6 +1944,17 @@ function buildQuestionCard(ref, orderNumber, section, group, isStandalone, index
   if (isStandalone) {
     body.appendChild(optionalMediaField(ref.id, group, "imageUrl", "image", "Image"));
     body.appendChild(optionalMediaField(ref.id, group, "audioUrl", "audio", "Audio"));
+  } else {
+    // Grouped question (passage_group / listening_group / etc.) — the
+    // GROUP's own shared passage/audio is edited elsewhere (the group
+    // header UI), but this individual question can ALSO carry its own
+    // separate image/audio, stored on its own bank entry. Previously
+    // never shown here at all, which is why an imported question's own
+    // image inside a reading passage group looked "missing" — the data
+    // was there (see mockTestExport.js / importAnalyze.js), there was
+    // just no UI anywhere to see or edit it.
+    body.appendChild(optionalQuestionMediaField(ref, entry, "imageUrl", "image", "Image"));
+    body.appendChild(optionalQuestionMediaField(ref, entry, "audioUrl", "audio", "Audio"));
   }
 
   body.appendChild(buildOptionsEditor(ref, entry));

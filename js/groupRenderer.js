@@ -127,16 +127,33 @@ export function buildQuestionBlock(q, orderNumber, group, options = {}) {
   }
   card.appendChild(header);
 
-  if (group.type === "single" && group.imageUrl) {
+  // Standalone ("single") questions store their own image/audio on the
+  // wrapping group object itself (group and question are 1:1 for that
+  // type — see editor.js's optionalMediaField(ref.id, group, ...) call).
+  // Grouped questions (passage_group / listening_group / etc.) are
+  // different: the GROUP's own shared media (passage illustration,
+  // listening clip) is rendered separately in buildSharedBlock() above,
+  // but each individual question inside the group can ALSO carry its
+  // own separate image/audio (e.g. a diagram for just that one
+  // sub-question) — stored on the question's own bank entry, not the
+  // group. This was previously never checked here at all for anything
+  // other than "single", so a grouped question's own image/audio was
+  // silently invisible everywhere this renders: admin editor, admin
+  // preview, AND the real student exam (all three share this exact
+  // function — see this file's header comment).
+  const ownImageUrl = group.type === "single" ? group.imageUrl : q.imageUrl;
+  const ownAudioUrl = group.type === "single" ? group.audioUrl : q.audioUrl;
+
+  if (ownImageUrl) {
     const imgWrap = document.createElement("div");
     imgWrap.className = "question-image-wrap";
-    imgWrap.innerHTML = `<img src="${escapeHtml(group.imageUrl)}" alt="Question illustration" loading="lazy" draggable="false" />`;
+    imgWrap.innerHTML = `<img src="${escapeHtml(ownImageUrl)}" alt="Question illustration" loading="lazy" draggable="false" />`;
     card.appendChild(imgWrap);
   }
-  if (group.type === "single" && group.audioUrl) {
+  if (ownAudioUrl) {
     const audioWrap = document.createElement("div");
     audioWrap.className = "question-audio-wrap";
-    audioWrap.innerHTML = `<audio controls controlslist="nodownload" disableremoteplayback preload="auto" src="${escapeHtml(group.audioUrl)}"></audio>`;
+    audioWrap.innerHTML = `<audio controls controlslist="nodownload" disableremoteplayback preload="auto" src="${escapeHtml(ownAudioUrl)}"></audio>`;
     card.appendChild(audioWrap);
   }
 
