@@ -62,6 +62,11 @@ const FIXED_SECTIONS = [
   { id: "sec-listening", title: "Listening", icon: "🎧" },
   { id: "sec-reading", title: "Reading", icon: "📖" },
 ];
+const DEFAULT_SECTION_ICON = "📄";
+/** Matching icon for a section by id when it's one of the 4 classic defaults; a generic fallback icon for any other (e.g. imported) section id — sections are no longer a fixed enum, see ensureFixedSections' comment. */
+function sectionIcon(sectionId) {
+  return FIXED_SECTIONS.find((fs) => fs.id === sectionId)?.icon || DEFAULT_SECTION_ICON;
+}
 const ESTIMATED_MINUTES_PER_QUESTION = 0.75; // heuristic only, see comment above
 const MAX_GROUP_QUESTIONS = 5;
 const MAX_HISTORY = 2000; // sanity ceiling, not a designed limit
@@ -257,36 +262,23 @@ function buildFixedSectionsSkeleton() {
 }
 
 /**
- * Forces draft.sections into exactly the 4 fixed sections, in fixed
- * order. Existing sections (from before this constraint existed, or from
- * a hand-edited import) are matched to a canonical slot by title keyword;
- * anything that doesn't match a keyword has its groups folded into the
- * first section ("Scripts & Vocabulary") rather than being dropped — no
- * question is ever lost, it just may need re-sorting into the right
- * section by hand afterward.
+ * Ensures `draft.sections` is a valid array to render — but no longer
+ * forces every draft into exactly the 4 fixed default sections. A
+ * draft's sections (their names, count, and order) are real content,
+ * not an enum this app enforces — an imported test keeps whatever
+ * sections its source file actually had, VERBATIM (see
+ * importAnalyze.js's classifySections/buildImportPlan), and a brand
+ * new blank test still starts from the 4 familiar defaults (see
+ * createBlankDraft below). This now only steps in for a genuinely
+ * malformed/empty draft, where SOME starting point is needed and the
+ * old 4-section default remains a reasonable one — it previously ran
+ * on every load unconditionally and silently flattened any imported
+ * test's real section names back into these 4, folding anything it
+ * didn't recognize into "Scripts & Vocabulary".
  */
 function ensureFixedSections(targetDraft) {
-  const existing = Array.isArray(targetDraft.sections) ? targetDraft.sections : [];
-  const alreadyFixed = existing.length === FIXED_SECTIONS.length && FIXED_SECTIONS.every((fs, i) => existing[i]?.id === fs.id);
-  if (alreadyFixed) return;
-
-  const canonical = buildFixedSectionsSkeleton();
-  const matchIndexFor = (title) => {
-    const t = (title || "").toLowerCase();
-    if (/script|vocab/.test(t)) return 0;
-    if (/conversation|expression/.test(t)) return 1;
-    if (/listening/.test(t)) return 2;
-    if (/reading/.test(t)) return 3;
-    return -1;
-  };
-
-  existing.forEach((section) => {
-    const idx = matchIndexFor(section.title);
-    const target = idx === -1 ? canonical[0] : canonical[idx];
-    target.groups.push(...(section.groups || []));
-  });
-
-  targetDraft.sections = canonical;
+  if (Array.isArray(targetDraft.sections) && targetDraft.sections.length > 0) return;
+  targetDraft.sections = buildFixedSectionsSkeleton();
 }
 
 function createBlankDraft() {
@@ -1291,10 +1283,9 @@ function computeSectionStats(section) {
 
 /** The score-calculation engine — reads live from `draft`, never from a cached/stale copy, so it's always correct whenever it's called (including every time the modal is opened). Every number here is derived, never hardcoded. */
 function computeScoreSummary() {
-  const perSection = FIXED_SECTIONS.map((fs) => {
-    const section = findSection(fs.id);
-    const stats = section ? computeSectionStats(section) : { questionCount: 0, groupCount: 0, marks: 0 };
-    return { key: fs.key, title: fs.title, icon: fs.icon, ...stats };
+  const perSection = draft.sections.map((section) => {
+    const stats = computeSectionStats(section);
+    return { key: section.id, title: section.title, icon: sectionIcon(section.id), ...stats };
   });
 
   const totalQuestions = perSection.reduce((s, x) => s + x.questionCount, 0);
@@ -1327,8 +1318,19 @@ function getResultSettings() {
   if (!draft.resultSettings) draft.resultSettings = JSON.parse(JSON.stringify(DEFAULT_RESULT_SETTINGS));
   const rs = draft.resultSettings;
   rs.sectionLabels = rs.sectionLabels || {};
-  FIXED_SECTIONS.forEach((fs) => {
-    if (!rs.sectionLabels[fs.id]) rs.sectionLabels[fs.id] = { ...DEFAULT_RESULT_SETTINGS.sectionLabels[fs.id] };
+  // Seed a label entry for every section THIS draft actually has, not
+  // just the 4 historical defaults — an imported test's real sections
+  // (see importAnalyze.js) previously never got an entry here at all,
+  // so its "Section Display Names" fields never appeared for editing.
+  // Falls back to the matching FIXED_SECTIONS default text when a
+  // section's id happens to be one of the 4 classic ones (new blank
+  // tests), otherwise starts from that section's own title.
+  draft.sections.forEach((section) => {
+    if (!rs.sectionLabels[section.id]) {
+      rs.sectionLabels[section.id] = DEFAULT_RESULT_SETTINGS.sectionLabels[section.id]
+        ? { ...DEFAULT_RESULT_SETTINGS.sectionLabels[section.id] }
+        : { ja: section.title, en: section.title };
+    }
   });
   return rs;
 }
@@ -1394,15 +1396,15 @@ function renderResultSettingsDialog() {
   wrap.appendChild(resultSettingsField("Not Passed — English", resultSettingsTextInput(rs, "failedEn")));
 
   wrap.appendChild(el("h3", { class: "scores-block-title", text: "Section Display Names" }));
-  FIXED_SECTIONS.forEach((fs) => {
-    const label = rs.sectionLabels[fs.id];
+  draft.sections.forEach((section) => {
+    const label = rs.sectionLabels[section.id];
     const row = el("div", { class: "field-row" });
     const jaInput = el("input", { type: "text", class: "text-input", value: label.ja || "" });
     jaInput.addEventListener("input", (e) => { label.ja = e.target.value; persist(); });
     const enInput = el("input", { type: "text", class: "text-input", value: label.en || "" });
     enInput.addEventListener("input", (e) => { label.en = e.target.value; persist(); });
-    row.appendChild(resultSettingsField(`${fs.icon} ${fs.title} — Japanese`, jaInput));
-    row.appendChild(resultSettingsField(`${fs.icon} ${fs.title} — English`, enInput));
+    row.appendChild(resultSettingsField(`${sectionIcon(section.id)} ${section.title} — Japanese`, jaInput));
+    row.appendChild(resultSettingsField(`${sectionIcon(section.id)} ${section.title} — English`, enInput));
     wrap.appendChild(row);
   });
 }
@@ -1509,26 +1511,24 @@ function renderTotalScoreBadge() {
 function renderProgressBar() {
   renderTotalScoreBadge();
   els.progressBarSections.innerHTML = "";
-  FIXED_SECTIONS.forEach((fs) => {
-    const section = findSection(fs.id);
-    if (!section) return;
+  draft.sections.forEach((section) => {
     const stats = computeSectionStats(section);
     const hasContent = stats.questionCount > 0;
     const complete = hasContent && stats.incompleteCount === 0;
     const statusGlyph = complete ? "✓" : hasContent ? "⚠" : "";
     const stateClass = complete ? " complete" : hasContent ? " warning" : "";
-    const isActive = fs.id === activeSectionId;
+    const isActive = section.id === activeSectionId;
 
     const pill = el("button", {
       type: "button",
       class: "progress-section-pill" + stateClass + (isActive ? " active" : ""),
       "aria-selected": String(isActive),
       role: "tab",
-      onclick: () => setActiveSection(fs.id),
+      onclick: () => setActiveSection(section.id),
     }, [
       el("div", { class: "progress-section-title-row" }, [
-        el("span", { text: fs.icon }),
-        el("span", { text: fs.title }),
+        el("span", { text: sectionIcon(section.id) }),
+        el("span", { text: section.title }),
         el("span", { class: "progress-section-status", text: statusGlyph }),
       ]),
       el("div", { class: "progress-section-stats", text: `${stats.questionCount} Question${stats.questionCount === 1 ? "" : "s"} • ${stats.groupCount} Group${stats.groupCount === 1 ? "" : "s"} • ${stats.marks} Point${stats.marks === 1 ? "" : "s"} • ~${stats.estMinutes} min` }),
@@ -1673,10 +1673,9 @@ function buildThreeDotMenu(items) {
 
 function buildSectionDoc(section, sectionIndex, buildBody) {
   const wrap = el("div", { class: "section-doc", id: `section-doc-${section.id}` });
-  const fixedMeta = FIXED_SECTIONS[sectionIndex] || FIXED_SECTIONS.find((fs) => fs.id === section.id);
 
   const header = el("div", { class: "section-doc-header section-doc-fixed-header" }, [
-    el("span", { text: fixedMeta?.icon || "" }),
+    el("span", { text: sectionIcon(section.id) }),
     el("span", { text: section.title }),
   ]);
 
@@ -1922,8 +1921,8 @@ function buildQuestionCard(ref, orderNumber, section, group, isStandalone, index
     menuItems.push(null);
   }
   menuItems.push(null);
-  FIXED_SECTIONS.filter((fs) => fs.id !== section.id).forEach((fs) => {
-    menuItems.push({ label: `Move To ${fs.icon} ${fs.title}`, onClick: () => moveQuestionToSection(ref.id, fs.id) });
+  draft.sections.filter((s) => s.id !== section.id).forEach((s) => {
+    menuItems.push({ label: `Move To ${sectionIcon(s.id)} ${s.title}`, onClick: () => moveQuestionToSection(ref.id, s.id) });
   });
   menuItems.push(null);
   menuItems.push({ label: entry.required ? "Required OFF" : "Required ON", onClick: () => { saveQuestionField(ref, { required: !entry.required }); renderDoc(); } });

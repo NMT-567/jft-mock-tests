@@ -8,7 +8,7 @@
 import { hidePageLoader, initThemeToggle } from "../../js/utils.js?v=5";
 import { saveDraft, listDrafts } from "./storage.js?v=3";
 import { el, showToast, formatUpdatedAt } from "./components.js?v=3";
-import { buildImportPlan, commitImportPlan, runIntegrityCheck, FIXED_SECTIONS } from "./importAnalyze.js?v=1";
+import { buildImportPlan, commitImportPlan, runIntegrityCheck } from "./importAnalyze.js?v=2";
 import { importDocumentToDraft, importLegacyV1Test } from "./import.js?v=6";
 
 const els = {
@@ -162,7 +162,7 @@ function renderPreview(plan) {
   els.previewStatGrid.innerHTML = "";
   [
     ["Questions", plan.stats.realQuestions],
-    ["Sections", FIXED_SECTIONS.length],
+    ["Sections", plan.sectionOrder.length],
     ["Passage Groups", plan.stats.passageGroups],
     ["Listening", plan.stats.listeningQuestions],
     ["With Image", plan.stats.imageQuestions],
@@ -170,11 +170,14 @@ function renderPreview(plan) {
   ].forEach(([label, value]) => els.previewStatGrid.appendChild(statBox(label, value)));
 
   els.previewSectionBreakdown.innerHTML = "";
-  FIXED_SECTIONS.forEach((fs) => {
-    const count = plan.stats.perSection[fs.key];
+  // Dynamic now — one row per ACTUAL section this file has, in source
+  // order, with its real name — not always exactly 4 fixed rows
+  // regardless of what the file actually contained (see
+  // importAnalyze.js's classifySections/buildImportPlan).
+  plan.stats.perSection.forEach(({ title, count }) => {
     els.previewSectionBreakdown.appendChild(
       el("div", { class: "import-section-row" }, [
-        el("span", { class: "import-section-row-title", text: fs.title }),
+        el("span", { class: "import-section-row-title", text: title }),
         el("span", { class: "import-section-row-count", text: `${count} question${count === 1 ? "" : "s"}` }),
       ])
     );
@@ -199,8 +202,11 @@ function renderPreview(plan) {
   els.previewAmbiguousBlock.hidden = plan.ambiguous.length === 0;
   els.previewAmbiguousList.innerHTML = "";
   plan.ambiguous.forEach((a) => {
-    const sectionTitle = FIXED_SECTIONS.find((fs) => fs.key === a.assignedSection)?.title || a.assignedSection;
-    els.previewAmbiguousList.appendChild(el("li", { text: `"${(a.question || "").slice(0, 60)}" — assigned to ${sectionTitle}, no strong signal either way.` }));
+    // a.assignedSection is now already the real (verbatim or
+    // fallback-human-readable) section title itself — see
+    // classifySections in importAnalyze.js — not a short key needing
+    // a lookup against a fixed list.
+    els.previewAmbiguousList.appendChild(el("li", { text: `"${(a.question || "").slice(0, 60)}" — assigned to ${a.assignedSection}, no strong signal either way.` }));
   });
 
   renderReplaceTargetList();
@@ -296,8 +302,7 @@ function renderSuccess(report) {
   els.successAmbiguousBlock.hidden = currentPlan.ambiguous.length === 0;
   els.successAmbiguousList.innerHTML = "";
   currentPlan.ambiguous.forEach((a) => {
-    const sectionTitle = FIXED_SECTIONS.find((fs) => fs.key === a.assignedSection)?.title || a.assignedSection;
-    els.successAmbiguousList.appendChild(el("li", { text: `"${(a.question || "").slice(0, 60)}" — in ${sectionTitle}, please confirm.` }));
+    els.successAmbiguousList.appendChild(el("li", { text: `"${(a.question || "").slice(0, 60)}" — in ${a.assignedSection}, please confirm.` }));
   });
 }
 

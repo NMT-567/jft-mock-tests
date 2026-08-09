@@ -18,14 +18,15 @@
  * import.js's existing importDocumentToDraft/importLegacyV1Test still
  * handle those; importFileToDraft (see below) picks the right path.
  */
-import { generateId } from "./components.js?v=3";
+import { generateId, slugify } from "./components.js?v=3";
 import { getBankEntry, saveBankEntry, newBankEntry } from "./questionBank.js?v=4";
 
 /**
- * The exam ALWAYS contains exactly these 4 sections (mirrors editor.js's
- * own FIXED_SECTIONS — duplicated here rather than imported since
- * editor.js doesn't export it and this file must also run from the
- * dashboard/import page, which never loads editor.js).
+ * Default sections for a brand-new BLANK test created in the admin
+ * (not imported) — a reasonable, familiar starting point. Imports no
+ * longer force everything into these 4 — see classifySections below —
+ * this list is now only the "new test" default and the last-resort
+ * fallback label set for content with no section info at all.
  */
 export const FIXED_SECTIONS = [
   { key: "scripts", id: "sec-scripts", title: "Scripts & Vocabulary" },
@@ -97,45 +98,51 @@ export function detectGroups(rawQuestions) {
    MUST be flagged per "do not guess silently".
    ========================================================= */
 /**
- * Maps an arbitrary source `section` label (whatever free-text string
- * the admin typed when tagging the question — e.g. "Listening
- * Comprehension", "Reading", "reading comprehension") onto one of this
- * tool's FIXED_SECTIONS keys. Keyword-based rather than exact-match,
- * since the source project's labels aren't guaranteed to match this
- * tool's canonical titles word-for-word. Returns null if nothing
- * recognizable is found, so callers can fall back to content-based
- * heuristics for genuinely unlabeled data.
+ * Picks whichever exact string the majority of a group's children carry
+ * in their own `section` field, VERBATIM (original casing/spacing, not
+ * normalized/collapsed) — used to title a passage/listening group when
+ * its own `type` doesn't map to something more specific. Returns null
+ * if no child has a usable section string at all.
  */
-function normalizeSourceSection(label) {
-  if (!label || typeof label !== "string") return null;
-  const s = label.toLowerCase();
-  if (/read/.test(s)) return "reading";
-  if (/listen/.test(s)) return "listening";
-  if (/convers|expression/.test(s)) return "conversation";
-  if (/script|vocab/.test(s)) return "scripts";
-  return null;
+function majoritySectionLabel(children) {
+  const counts = new Map();
+  children.forEach((c) => {
+    const label = (c.section || "").trim();
+    if (!label) return;
+    counts.set(label, (counts.get(label) || 0) + 1);
+  });
+  let best = null;
+  let bestCount = 0;
+  counts.forEach((count, label) => {
+    if (count > bestCount) { best = label; bestCount = count; }
+  });
+  return best;
 }
 
 function strongSignal(item) {
-  if (item.kind === "header" || item.kind === "child") return ["reading", "high"];
+  if (item.kind === "header" || item.kind === "child") return ["Reading", "high"];
   const raw = item.raw;
-  // Trust the source document's own `section` field first — it's the
-  // admin's explicit, authoritative tagging from the source project's
-  // Question Bank, and should always outrank a guess from question
-  // content. This was previously skipped entirely, which is why
-  // sections with no other distinguishing signal (e.g. Reading
-  // questions with no audioUrl and no passage-header structure) fell
-  // through to positional inheritance from an unrelated neighboring
-  // section instead of using the label that was right there in the file.
-  const fromSourceLabel = normalizeSourceSection(raw.section);
-  if (fromSourceLabel) return [fromSourceLabel, "high"];
-  if (raw.audioUrl) return ["listening", "high"];
+  // Trust the source document's own `section` field first, VERBATIM —
+  // it's the admin's explicit, authoritative tagging from the source
+  // project's Question Bank, and should always outrank a guess from
+  // question content. Previously this was passed through
+  // normalizeSourceSection() and collapsed into one of 4 fixed keys
+  // (e.g. "Kanji Reading" and "Reading Comprehension" would both become
+  // just "reading", losing the actual original section name entirely).
+  // Now the exact string IS the section — no collapsing, no renaming.
+  const label = (raw.section || "").trim();
+  if (label) return [label, "high"];
+  // No section field at all on this question — fall back to guessing
+  // from content, same heuristics as before, but returning a
+  // human-readable fallback title (there's no original name to
+  // preserve here, since the source never had one for this question).
+  if (raw.audioUrl) return ["Listening", "high"];
   const text = raw.question || "";
-  if (/look at the illustration/i.test(text)) return ["scripts", "medium"];
+  if (/look at the illustration/i.test(text)) return ["Scripts & Vocabulary", "medium"];
   const hasBlank = /＿{2,}|_{3,}/.test(text);
   const isDialogue = /[AB]\s*[:：]/.test(text);
-  if (isDialogue && hasBlank) return ["conversation", "medium"];
-  if (/<u>.*?<\/u>/.test(text) && !isDialogue) return ["scripts", "medium"];
+  if (isDialogue && hasBlank) return ["Conversation & Expression", "medium"];
+  if (/<u>.*?<\/u>/.test(text) && !isDialogue) return ["Scripts & Vocabulary", "medium"];
   return [null, null];
 }
 
@@ -152,7 +159,7 @@ export function classifySections(items) {
     while (n < items.length && !results[n][0]) n++;
     const prevSec = p >= 0 ? results[p][0] : null;
     const nextSec = n < items.length ? results[n][0] : null;
-    results[idx] = [prevSec || nextSec || "scripts", "low"];
+    results[idx] = [prevSec || nextSec || "Scripts & Vocabulary", "low"];
   }
   return results;
 }
@@ -246,7 +253,8 @@ function detectGroupsFromSource(test) {
           audioUrl: g.audioUrl || "",
         },
         groupType: g.type || null,
-        sectionKey: null, // resolved below, once all children are collected
+        sectionTitle: null, // resolved below, once all children are collected
+        firstIndex: index, // this question's position — used to order sections by first appearance, same as any standalone item
         children: [],
         fromSourceGroup: true,
       };
@@ -256,21 +264,18 @@ function detectGroupsFromSource(test) {
     entry.children.push(raw);
   });
 
-  // Resolve each group's section: prefer the group's own `type`
-  // ("listening"/"reading" map directly; "general" has no fixed
-  // section, e.g. a shared-instructions-only Grammar/Vocabulary
-  // block), otherwise fall back to whatever section label the
-  // majority of its child questions carry.
+  // Resolve each group's section title: prefer whatever exact label the
+  // majority of its children carry (VERBATIM — this is real content
+  // from the source, not a guess), then fall back to a label derived
+  // from the group's own `type` only if no child has a section string
+  // at all ("general" has no fixed section — e.g. a shared-
+  // instructions-only Grammar/Vocabulary block with no better signal).
   passageGroups.forEach((entry) => {
-    if (entry.groupType === "listening") { entry.sectionKey = "listening"; return; }
-    if (entry.groupType === "reading") { entry.sectionKey = "reading"; return; }
-    const counts = {};
-    entry.children.forEach((c) => {
-      const sec = normalizeSourceSection(c.section);
-      if (sec) counts[sec] = (counts[sec] || 0) + 1;
-    });
-    const best = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
-    entry.sectionKey = best ? best[0] : "reading"; // "reading" as the least-surprising default for a passage-style group with no other signal
+    const fromChildren = majoritySectionLabel(entry.children);
+    if (fromChildren) { entry.sectionTitle = fromChildren; return; }
+    if (entry.groupType === "listening") { entry.sectionTitle = "Listening"; return; }
+    if (entry.groupType === "reading") { entry.sectionTitle = "Reading"; return; }
+    entry.sectionTitle = "Reading"; // least-surprising default for a passage-style group with no other signal
   });
 
   return { passageGroups, standaloneItems, warnings };
@@ -290,12 +295,32 @@ export function buildImportPlan(json) {
   const { valid, errors, test } = validateSourceDocument(json);
   if (!valid) return { valid: false, errors };
 
-  const bySection = { scripts: [], conversation: [], listening: [], reading: [] };
+  // Ordered, title-keyed section builder — sections come into existence
+  // in the order their title is first seen while walking the source
+  // file's own question order, and are keyed by the EXACT title string
+  // (so "Reading" and "reading" would be different sections — this
+  // matches "keep it exactly as the source project has it" rather than
+  // silently merging near-duplicates, which could hide a genuine
+  // labeling inconsistency in the source data instead of surfacing it).
+  const sectionOrder = [];
+  const bySection = new Map(); // title -> entries[]
+  function pushToSection(title, entry) {
+    if (!bySection.has(title)) { bySection.set(title, []); sectionOrder.push(title); }
+    bySection.get(title).push(entry);
+  }
+
   const ambiguous = [];
   let passageGroups = [];
   let warnings = [];
 
   const sourceGroups = detectGroupsFromSource(test);
+
+  // Combine groups + standalone items into one list, each carrying its
+  // first-appearance index in the source questions[] array, so sections
+  // get created in true source order regardless of whether an item is
+  // a group (resolved in a second pass, after all its children are
+  // known) or a standalone question (resolved immediately).
+  const orderedTopLevel = [];
 
   if (sourceGroups) {
     // Real groups[] + questionGroupId data present — use it directly,
@@ -303,50 +328,63 @@ export function buildImportPlan(json) {
     passageGroups = sourceGroups.passageGroups;
     warnings = sourceGroups.warnings;
     passageGroups.forEach((g) => {
-      bySection[g.sectionKey].push({ kind: "group", group: g });
+      orderedTopLevel.push({ firstIndex: g.firstIndex, title: g.sectionTitle, kind: "group", group: g });
     });
     // Standalone (non-grouped) questions still go through the normal
     // per-question classification (source `section` field first, see
     // strongSignal, then content heuristics as a last resort).
     const classifications = classifySections(sourceGroups.standaloneItems);
     sourceGroups.standaloneItems.forEach((item, idx) => {
-      const [sectionKey, confidence] = classifications[idx];
+      const [title, confidence] = classifications[idx];
       if (confidence === "low") {
-        ambiguous.push({ id: item.raw.id, question: item.raw.question, assignedSection: sectionKey, kind: item.kind });
+        ambiguous.push({ id: item.raw.id, question: item.raw.question, assignedSection: title, kind: item.kind });
       }
-      bySection[sectionKey].push({ kind: "standalone", raw: item.raw });
+      orderedTopLevel.push({ firstIndex: item.index, title, kind: "standalone", raw: item.raw });
     });
   } else {
     // No groups[] in this file — fall back to the older text-heuristic
-    // (still needed for exports made before groups[] was added).
+    // (still needed for exports made before groups[] was added). No
+    // original section names exist for header/child items in this
+    // path (they were never real questions with a `section` field to
+    // begin with), so these get the same human-readable fallback
+    // titles classifySections already uses for content with no signal.
     const { items, warnings: detectWarnings } = detectGroups(test.questions);
     warnings = detectWarnings;
     const classifications = classifySections(items);
     let currentGroup = null;
 
     items.forEach((item, idx) => {
-      const [sectionKey, confidence] = classifications[idx];
+      const [title, confidence] = classifications[idx];
       if (confidence === "low") {
-        ambiguous.push({ id: item.raw.id, question: item.raw.question, assignedSection: sectionKey, kind: item.kind });
+        ambiguous.push({ id: item.raw.id, question: item.raw.question, assignedSection: title, kind: item.kind });
       }
       if (item.kind === "header") {
-        currentGroup = { headerId: item.raw.id, headerRaw: item.raw, declaredCount: item.declaredCount, childCount: item.childCount, sectionKey, children: [], fromSourceGroup: false };
+        currentGroup = { headerId: item.raw.id, headerRaw: item.raw, declaredCount: item.declaredCount, childCount: item.childCount, sectionTitle: title, firstIndex: item.index, children: [], fromSourceGroup: false };
         passageGroups.push(currentGroup);
-        bySection[sectionKey].push({ kind: "group", group: currentGroup });
+        orderedTopLevel.push({ firstIndex: item.index, title, kind: "group", group: currentGroup });
         return;
       }
       if (item.kind === "child") {
         if (currentGroup && currentGroup.headerId === item.headerId) currentGroup.children.push(item.raw);
-        return; // children are represented via their parent group entry above, not a separate top-level bySection item
+        return; // children are represented via their parent group entry above, not a separate top-level item
       }
-      bySection[sectionKey].push({ kind: "standalone", raw: item.raw });
+      orderedTopLevel.push({ firstIndex: item.index, title, kind: "standalone", raw: item.raw });
     });
   }
+
+  // Now that every item's title AND source position is known, sort by
+  // position and file each into its section — this is what actually
+  // creates sections in original source order.
+  orderedTopLevel.sort((a, b) => a.firstIndex - b.firstIndex);
+  orderedTopLevel.forEach((item) => {
+    if (item.kind === "group") pushToSection(item.title, { kind: "group", group: item.group });
+    else pushToSection(item.title, { kind: "standalone", raw: item.raw });
+  });
 
   // Duplicate-ID-against-existing-bank check (read-only).
   const allRealQuestions = [];
   passageGroups.forEach((g) => g.children.forEach((c) => allRealQuestions.push(c)));
-  Object.values(bySection).forEach((entries) =>
+  bySection.forEach((entries) =>
     entries.forEach((e) => { if (e.kind === "standalone") allRealQuestions.push(e.raw); })
   );
   const existingBankCollisions = allRealQuestions
@@ -361,12 +399,15 @@ export function buildImportPlan(json) {
     listeningQuestions: allRealQuestions.filter((q) => !!q.audioUrl).length,
     imageQuestions: allRealQuestions.filter((q) => !!q.imageUrl).length + passageGroups.filter((g) => !!g.headerRaw.imageUrl).length,
     audioFiles: new Set(allRealQuestions.map((q) => q.audioUrl).filter(Boolean)).size,
-    perSection: Object.fromEntries(
-      FIXED_SECTIONS.map((fs) => [
-        fs.key,
-        bySection[fs.key].reduce((sum, it) => sum + (it.kind === "group" ? it.group.children.length : 1), 0),
-      ])
-    ),
+    // Dynamic now — one entry per ACTUAL section title found in this
+    // file, in source order, instead of always exactly the 4 fixed
+    // keys (which silently reported 0 for any section this file didn't
+    // happen to use, and had nowhere to put a section this file DID
+    // use that wasn't one of those 4).
+    perSection: sectionOrder.map((title) => ({
+      title,
+      count: bySection.get(title).reduce((sum, it) => sum + (it.kind === "group" ? it.group.children.length : 1), 0),
+    })),
   };
 
   // Flag (not silently resolve) any passage-group child that carries its
@@ -390,6 +431,7 @@ export function buildImportPlan(json) {
   return {
     valid: true,
     sourceTest: test,
+    sectionOrder,
     bySection,
     passageGroups,
     ambiguous,
@@ -466,8 +508,9 @@ export function commitImportPlan(plan, { mode = "new", existingDraftId = null, d
     return { id: bankId };
   }
 
-  const sections = FIXED_SECTIONS.map((fs) => {
-    const entries = plan.bySection[fs.key];
+  const usedSectionIds = new Set();
+  const sections = plan.sectionOrder.map((title) => {
+    const entries = plan.bySection.get(title);
     const groups = entries.map((entry) => {
       if (entry.kind === "group") {
         const g = entry.group;
@@ -495,7 +538,18 @@ export function commitImportPlan(plan, { mode = "new", existingDraftId = null, d
         questions: [importQuestion(raw)],
       };
     });
-    return { id: fs.id, title: fs.title, groups };
+    // id is a slug of the VERBATIM title, not a hardcoded key — two
+    // different source files can now genuinely have different section
+    // sets/names/counts/order, and each gets its own faithful id/title
+    // pair instead of being forced into one of 4 fixed slots. Guarded
+    // against two different titles happening to slugify to the same
+    // string (e.g. "Reading!" / "Reading?") — titles themselves stay
+    // exactly as-is either way, only the internal id gets disambiguated.
+    let id = `sec-${slugify(title)}`;
+    let n = 2;
+    while (usedSectionIds.has(id)) { id = `sec-${slugify(title)}-${n}`; n += 1; }
+    usedSectionIds.add(id);
+    return { id, title, groups };
   });
 
   const test = plan.sourceTest;
@@ -527,7 +581,7 @@ export function runIntegrityCheck(plan, draft, idRemap) {
   const mismatches = [];
   const sourceRealQuestions = [];
   plan.passageGroups.forEach((g) => g.children.forEach((c) => sourceRealQuestions.push(c)));
-  Object.values(plan.bySection).forEach((entries) =>
+  plan.bySection.forEach((entries) =>
     entries.forEach((e) => { if (e.kind === "standalone") sourceRealQuestions.push(e.raw); })
   );
 
