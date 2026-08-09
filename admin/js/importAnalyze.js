@@ -96,9 +96,39 @@ export function detectGroups(rawQuestions) {
    fallback (no content signal at all, inherited from a neighbor) and
    MUST be flagged per "do not guess silently".
    ========================================================= */
+/**
+ * Maps an arbitrary source `section` label (whatever free-text string
+ * the admin typed when tagging the question — e.g. "Listening
+ * Comprehension", "Reading", "reading comprehension") onto one of this
+ * tool's FIXED_SECTIONS keys. Keyword-based rather than exact-match,
+ * since the source project's labels aren't guaranteed to match this
+ * tool's canonical titles word-for-word. Returns null if nothing
+ * recognizable is found, so callers can fall back to content-based
+ * heuristics for genuinely unlabeled data.
+ */
+function normalizeSourceSection(label) {
+  if (!label || typeof label !== "string") return null;
+  const s = label.toLowerCase();
+  if (/read/.test(s)) return "reading";
+  if (/listen/.test(s)) return "listening";
+  if (/convers|expression/.test(s)) return "conversation";
+  if (/script|vocab/.test(s)) return "scripts";
+  return null;
+}
+
 function strongSignal(item) {
   if (item.kind === "header" || item.kind === "child") return ["reading", "high"];
   const raw = item.raw;
+  // Trust the source document's own `section` field first — it's the
+  // admin's explicit, authoritative tagging from the source project's
+  // Question Bank, and should always outrank a guess from question
+  // content. This was previously skipped entirely, which is why
+  // sections with no other distinguishing signal (e.g. Reading
+  // questions with no audioUrl and no passage-header structure) fell
+  // through to positional inheritance from an unrelated neighboring
+  // section instead of using the label that was right there in the file.
+  const fromSourceLabel = normalizeSourceSection(raw.section);
+  if (fromSourceLabel) return [fromSourceLabel, "high"];
   if (raw.audioUrl) return ["listening", "high"];
   const text = raw.question || "";
   if (/look at the illustration/i.test(text)) return ["scripts", "medium"];
