@@ -398,8 +398,8 @@ html[data-theme="dark"] .icon-moon { display: none; }
      screen — so "Nihongo Mock Test" appears many times over, exactly
      as asked, with no JavaScript needed for the pattern itself. */
   background-repeat: repeat;
-  background-size: 300px 170px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='170'%3E%3Ctext x='-30' y='55' transform='rotate(-25 150 85)' font-family='Arial, Helvetica, sans-serif' font-size='18' font-weight='700' fill='%23888888'%3ENihongo Mock Test%3C/text%3E%3Ctext x='-30' y='140' transform='rotate(-25 150 85)' font-family='Arial, Helvetica, sans-serif' font-size='18' font-weight='700' fill='%23888888'%3ENihongo Mock Test%3C/text%3E%3C/svg%3E");
+  background-size: 420px 260px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='260'%3E%3Ctext x='40' y='110' transform='rotate(-25 40 110)' font-family='Arial, Helvetica, sans-serif' font-size='18' font-weight='700' fill='%23888888'%3ENihongo Mock Test%3C/text%3E%3Ctext x='40' y='220' transform='rotate(-25 40 220)' font-family='Arial, Helvetica, sans-serif' font-size='18' font-weight='700' fill='%23888888'%3ENihongo Mock Test%3C/text%3E%3C/svg%3E");
   /* "Changeable most slowly" — a single background-position animation
      panning by exactly one tile's width/height over a very long
      duration (6 minutes). Because the pan distance matches the tile
@@ -410,7 +410,7 @@ html[data-theme="dark"] .icon-moon { display: none; }
 
 @keyframes watermark-slow-pan {
   0% { background-position: 0 0; }
-  100% { background-position: 300px 170px; }
+  100% { background-position: 420px 260px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
