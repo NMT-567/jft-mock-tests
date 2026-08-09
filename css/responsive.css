@@ -65,6 +65,7 @@
   .timer { padding: 4px 8px; font-size: 0.78rem; gap: 4px; }
   .timer .icon { width: 14px; height: 14px; }
   .exam-util-row { padding: 5px 10px; gap: 6px; }
+  .exam-util-actions { gap: 4px; }
   .exam-mode-indicator { font-size: 0.62rem; padding: 2px 7px; }
   .icon-btn-sm { width: 36px; height: 36px; min-height: 36px; }
 }

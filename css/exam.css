@@ -363,8 +363,10 @@
   height: var(--bottom-nav-height);
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  padding: 0 16px;
   z-index: 70;
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
@@ -380,6 +382,7 @@
   font-size: 0.72rem;
   font-weight: 600;
   min-height: var(--touch-target-min);
+  min-width: 88px; /* keeps Previous/Next comfortably tappable even though they're no longer grid-equal-width */
 }
 .bottom-nav-btn .icon { width: 20px; height: 20px; }
 .bottom-nav-btn:active { background: var(--color-surface-alt); }

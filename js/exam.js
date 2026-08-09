@@ -347,15 +347,24 @@ function renderProgress(group) {
 /** The persistent, informational-only 4-section indicator — never clickable; completed sections read as locked/done, the current one is highlighted, upcoming ones are visibly inert. Re-rendered on init and every time a section actually advances. */
 function renderSectionProgress() {
   els.examSectionProgress.innerHTML = "";
+  let currentEl = null;
   test.sections.forEach((section, i) => {
     const isCompleted = i < state.currentSectionIndex;
     const isCurrent = i === state.currentSectionIndex;
     const item = document.createElement("div");
     item.className = "exam-section-progress-item" + (isCompleted ? " completed" : isCurrent ? " current" : " upcoming");
+    if (isCurrent) {
+      item.setAttribute("aria-current", "true");
+      currentEl = item;
+    }
     const glyph = isCompleted ? "✓" : isCurrent ? "●" : "○";
     item.innerHTML = `<span class="exam-section-progress-glyph">${glyph}</span><span class="exam-section-progress-title">${escapeHtmlLocal(section.title)}</span>`;
     els.examSectionProgress.appendChild(item);
   });
+  // Keep the active section visible without requiring the student to
+  // manually scroll the row — relevant once section count/name length
+  // exceeds what fits in one screen width.
+  currentEl?.scrollIntoView({ behavior: "smooth", inline: "nearest", block: "nearest" });
 }
 
 /** Tiny local escaper — this file has no existing HTML-escape import and section titles are trusted admin data anyway (never rendered via innerHTML elsewhere without going through groupRenderer's own escaping), but a section title is technically free text so this stays defensive rather than assuming it. */
