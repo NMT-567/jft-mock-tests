@@ -192,6 +192,90 @@ export function validateSourceDocument(json) {
   return { valid: errors.length === 0, errors, test };
 }
 
+/**
+ * Builds passage groups directly from the source document's real
+ * `groups[]` array + each question's `questionGroupId` — the actual
+ * data model used by the sibling nihongo-mock-test project (see
+ * questionGroupService.js there), rather than guessing group
+ * boundaries from an instructional sentence in the question text.
+ * Returns null if the source has no `groups[]` at all, so callers can
+ * fall back to the older text-heuristic detectGroups() for exports
+ * made before this data was included.
+ *
+ * `fromSourceGroup: true` is stamped on every returned group so
+ * downstream image-conflict checking (designed for the old
+ * text-heuristic format, which assumed one shared image per group —
+ * a concept that doesn't exist in this real schema, where only
+ * passageText/audioUrl are shared and every question keeps its own
+ * imageUrl) can skip these entirely instead of falsely flagging every
+ * grouped question's image as a "conflict".
+ */
+function detectGroupsFromSource(test) {
+  if (!Array.isArray(test.groups) || test.groups.length === 0) return null;
+
+  const groupsById = new Map(test.groups.map((g) => [g.id, g]));
+  const passageGroups = [];
+  const groupsByOrder = new Map(); // headerId -> passageGroups entry, built in question order
+  const standaloneItems = [];
+  const warnings = [];
+
+  test.questions.forEach((raw, index) => {
+    if (!raw.questionGroupId) {
+      standaloneItems.push({ kind: "standalone", raw, index });
+      return;
+    }
+    const g = groupsById.get(raw.questionGroupId);
+    if (!g) {
+      warnings.push(`Question "${(raw.question || "").slice(0, 60)}" (id ${raw.id}) references group id ${raw.questionGroupId}, which isn't in this file's groups[] — importing it as standalone instead.`);
+      standaloneItems.push({ kind: "standalone", raw, index });
+      return;
+    }
+    let entry = groupsByOrder.get(g.id);
+    if (!entry) {
+      entry = {
+        headerId: g.id,
+        // Kept in the same headerRaw shape the rest of this file
+        // already expects (see the old text-heuristic path below),
+        // so buildImportPlan/commitImportPlan/runIntegrityCheck don't
+        // need two separate code paths downstream of this function.
+        headerRaw: {
+          id: g.id,
+          question: g.title || g.instructions || "",
+          passageText: g.passageText || "",
+          imageUrl: null, // this schema has no group-level shared image — see fromSourceGroup note above
+          audioUrl: g.audioUrl || "",
+        },
+        groupType: g.type || null,
+        sectionKey: null, // resolved below, once all children are collected
+        children: [],
+        fromSourceGroup: true,
+      };
+      groupsByOrder.set(g.id, entry);
+      passageGroups.push(entry);
+    }
+    entry.children.push(raw);
+  });
+
+  // Resolve each group's section: prefer the group's own `type`
+  // ("listening"/"reading" map directly; "general" has no fixed
+  // section, e.g. a shared-instructions-only Grammar/Vocabulary
+  // block), otherwise fall back to whatever section label the
+  // majority of its child questions carry.
+  passageGroups.forEach((entry) => {
+    if (entry.groupType === "listening") { entry.sectionKey = "listening"; return; }
+    if (entry.groupType === "reading") { entry.sectionKey = "reading"; return; }
+    const counts = {};
+    entry.children.forEach((c) => {
+      const sec = normalizeSourceSection(c.section);
+      if (sec) counts[sec] = (counts[sec] || 0) + 1;
+    });
+    const best = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+    entry.sectionKey = best ? best[0] : "reading"; // "reading" as the least-surprising default for a passage-style group with no other signal
+  });
+
+  return { passageGroups, standaloneItems, warnings };
+}
+
 /* =========================================================
    PLAN BUILDING (pure — no localStorage access)
    ========================================================= */
@@ -206,36 +290,65 @@ export function buildImportPlan(json) {
   const { valid, errors, test } = validateSourceDocument(json);
   if (!valid) return { valid: false, errors };
 
-  const { items, warnings } = detectGroups(test.questions);
-  const classifications = classifySections(items);
-
   const bySection = { scripts: [], conversation: [], listening: [], reading: [] };
   const ambiguous = [];
-  const passageGroups = [];
-  let currentGroup = null;
+  let passageGroups = [];
+  let warnings = [];
 
-  items.forEach((item, idx) => {
-    const [sectionKey, confidence] = classifications[idx];
-    if (confidence === "low") {
-      ambiguous.push({ id: item.raw.id, question: item.raw.question, assignedSection: sectionKey, kind: item.kind });
-    }
-    if (item.kind === "header") {
-      currentGroup = { headerId: item.raw.id, headerRaw: item.raw, declaredCount: item.declaredCount, childCount: item.childCount, sectionKey, children: [] };
-      passageGroups.push(currentGroup);
-      bySection[sectionKey].push({ kind: "group", group: currentGroup });
-      return;
-    }
-    if (item.kind === "child") {
-      if (currentGroup && currentGroup.headerId === item.headerId) currentGroup.children.push(item.raw);
-      return; // children are represented via their parent group entry above, not a separate top-level bySection item
-    }
-    bySection[sectionKey].push({ kind: "standalone", raw: item.raw });
-  });
+  const sourceGroups = detectGroupsFromSource(test);
+
+  if (sourceGroups) {
+    // Real groups[] + questionGroupId data present — use it directly,
+    // no text-pattern guessing needed for these questions at all.
+    passageGroups = sourceGroups.passageGroups;
+    warnings = sourceGroups.warnings;
+    passageGroups.forEach((g) => {
+      bySection[g.sectionKey].push({ kind: "group", group: g });
+    });
+    // Standalone (non-grouped) questions still go through the normal
+    // per-question classification (source `section` field first, see
+    // strongSignal, then content heuristics as a last resort).
+    const classifications = classifySections(sourceGroups.standaloneItems);
+    sourceGroups.standaloneItems.forEach((item, idx) => {
+      const [sectionKey, confidence] = classifications[idx];
+      if (confidence === "low") {
+        ambiguous.push({ id: item.raw.id, question: item.raw.question, assignedSection: sectionKey, kind: item.kind });
+      }
+      bySection[sectionKey].push({ kind: "standalone", raw: item.raw });
+    });
+  } else {
+    // No groups[] in this file — fall back to the older text-heuristic
+    // (still needed for exports made before groups[] was added).
+    const { items, warnings: detectWarnings } = detectGroups(test.questions);
+    warnings = detectWarnings;
+    const classifications = classifySections(items);
+    let currentGroup = null;
+
+    items.forEach((item, idx) => {
+      const [sectionKey, confidence] = classifications[idx];
+      if (confidence === "low") {
+        ambiguous.push({ id: item.raw.id, question: item.raw.question, assignedSection: sectionKey, kind: item.kind });
+      }
+      if (item.kind === "header") {
+        currentGroup = { headerId: item.raw.id, headerRaw: item.raw, declaredCount: item.declaredCount, childCount: item.childCount, sectionKey, children: [], fromSourceGroup: false };
+        passageGroups.push(currentGroup);
+        bySection[sectionKey].push({ kind: "group", group: currentGroup });
+        return;
+      }
+      if (item.kind === "child") {
+        if (currentGroup && currentGroup.headerId === item.headerId) currentGroup.children.push(item.raw);
+        return; // children are represented via their parent group entry above, not a separate top-level bySection item
+      }
+      bySection[sectionKey].push({ kind: "standalone", raw: item.raw });
+    });
+  }
 
   // Duplicate-ID-against-existing-bank check (read-only).
   const allRealQuestions = [];
   passageGroups.forEach((g) => g.children.forEach((c) => allRealQuestions.push(c)));
-  items.filter((it) => it.kind === "standalone").forEach((it) => allRealQuestions.push(it.raw));
+  Object.values(bySection).forEach((entries) =>
+    entries.forEach((e) => { if (e.kind === "standalone") allRealQuestions.push(e.raw); })
+  );
   const existingBankCollisions = allRealQuestions
     .filter((q) => !!getBankEntry(q.id))
     .map((q) => ({ id: q.id, question: q.question }));
@@ -260,8 +373,13 @@ export function buildImportPlan(json) {
   // OWN imageUrl distinct from the group's shared one — this project's
   // schema has exactly one imageUrl slot per group, shared by every
   // child, so a child's own separate image has nowhere lossless to go.
+  // Skipped entirely for real source groups (g.fromSourceGroup) — that
+  // schema never had a group-level shared image in the first place (see
+  // detectGroupsFromSource's note), so every child's own imageUrl is
+  // simply correct as-is, not a conflict with anything.
   const imageConflicts = [];
   passageGroups.forEach((g) => {
+    if (g.fromSourceGroup) return;
     g.children.forEach((c) => {
       if (c.imageUrl && c.imageUrl !== g.headerRaw.imageUrl) {
         imageConflicts.push({ groupHeaderId: g.headerId, questionId: c.id, question: c.question, ownImageUrl: c.imageUrl, groupImageUrl: g.headerRaw.imageUrl });
@@ -315,6 +433,13 @@ export function commitImportPlan(plan, { mode = "new", existingDraftId = null, d
           marks: typeof raw.marks === "number" ? raw.marks : 1,
           difficulty: raw.difficulty || "medium",
           tags: Array.isArray(raw.tags) ? raw.tags : [],
+          // Previously omitted here entirely — every imported
+          // question's own image/audio was silently dropped, not just
+          // ones inside a passage group with its own separate image
+          // (see the imageConflicts check above, which only covers
+          // that one case, not the general one fixed here).
+          imageUrl: raw.imageUrl || null,
+          audioUrl: raw.audioUrl || null,
         }),
         { touchModified: false }
       );
@@ -332,7 +457,11 @@ export function commitImportPlan(plan, { mode = "new", existingDraftId = null, d
           id: g.headerId,
           type: "passage_group",
           title: g.headerRaw.question || "",
-          passageText: "",
+          // Previously hardcoded to "" unconditionally — silently
+          // dropped every passage's actual text on import even when
+          // the source had it. Now carried through from the source
+          // group (see detectGroupsFromSource) when present.
+          passageText: g.headerRaw.passageText || "",
           imageUrl: g.headerRaw.imageUrl || null,
           audioUrl: g.headerRaw.audioUrl || null,
           questions: g.children.map(importQuestion),
@@ -388,7 +517,7 @@ export function runIntegrityCheck(plan, draft, idRemap) {
     const bankId = idRemap.get(src.id) || src.id;
     const entry = getBankEntry(bankId);
     if (!entry) { mismatches.push({ id: src.id, field: "(entire question)", reason: "missing from bank after import" }); return; }
-    const fields = ["question", "correctOption", "explanation", "marks"];
+    const fields = ["question", "correctOption", "explanation", "marks", "imageUrl", "audioUrl"];
     fields.forEach((f) => {
       const sv = src[f] ?? (f === "marks" ? 1 : "");
       const ev = entry[f] ?? (f === "marks" ? 1 : "");
