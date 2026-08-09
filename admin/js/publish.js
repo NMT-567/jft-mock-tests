@@ -16,7 +16,7 @@
  * duplicating.
  */
 import { supabase } from "../../js/supabaseClient.js?v=1";
-import { buildExportDocument } from "./export.js?v=8";
+import { buildExportDocument } from "./export.js?v=9";
 
 /**
  * @param {object} draft - the local admin draft

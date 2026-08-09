@@ -6,7 +6,7 @@
  * individually (via test.questionIndex) and jumping to one switches to its
  * group's page, then scrolls to that question's anchor within it.
  */
-import { loadTest, findQuestionLocation } from "./loader.js?v=7";
+import { loadTest, findQuestionLocation } from "./loader.js?v=8";
 import { ExamTimer, getTimerState, formatTime } from "./timer.js?v=4";
 import { renderPalette, updatePaletteState, computeSummary, computeGroupCompletion } from "./palette.js?v=3";
 import { bindArrowKeyNavigation, resolveJumpQuestionId, bindSwipeToClose } from "./navigation.js?v=3";

@@ -28,8 +28,8 @@
 import { loadDraft, saveDraft, setLastOpenedDraftId } from "./storage.js?v=3";
 import { el, generateId, showToast, readFileAsDataUrl, confirmDialog } from "./components.js?v=3";
 import { validateDraft, isQuestionComplete, checkBrokenMedia } from "./validator.js?v=7";
-import { downloadExport, buildExportDocument } from "./export.js?v=8";
-import { renderGroupPreview } from "./preview.js?v=11";
+import { downloadExport, buildExportDocument } from "./export.js?v=9";
+import { renderGroupPreview } from "./preview.js?v=12";
 import { hidePageLoader, initThemeToggle, debounce, getQueryParam } from "../../js/utils.js?v=5";
 import { newBankEntry, getBankEntry, saveBankEntry, listBankEntries, computeUsageCounts } from "./questionBank.js?v=4";
 
@@ -2156,7 +2156,7 @@ async function handlePublish() {
   els.publishBtn.disabled = true;
   els.publishBtn.textContent = "Publishing…";
   try {
-    const { publishDraftToSupabase } = await import("./publish.js?v=4");
+    const { publishDraftToSupabase } = await import("./publish.js?v=5");
     await publishDraftToSupabase(draft, "published", profile.id);
     showToast("Published — visible to authorized users on the dashboard.", "success");
   } catch (err) {

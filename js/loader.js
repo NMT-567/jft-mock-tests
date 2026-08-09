@@ -82,6 +82,15 @@ function normalizeQuestion(raw, globalIndex) {
     explanation: raw.explanation || "",
     marks: typeof raw.marks === "number" ? raw.marks : 1,
     required: !!raw.required,
+    // Previously omitted here — silently dropped every question's own
+    // image/audio before it ever reached groupRenderer.js, even though
+    // that renderer correctly checks for it (q.imageUrl/q.audioUrl for
+    // non-"single" groups). The data never made it this far to begin
+    // with. See the matching fix in admin/js/export.js's
+    // buildExportQuestion(), which is what actually publishes these
+    // two fields into the data this function reads.
+    imageUrl: raw.imageUrl || null,
+    audioUrl: raw.audioUrl || null,
   };
 }
 

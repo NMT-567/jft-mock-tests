@@ -11,7 +11,8 @@
  *   section:   id, title, groups
  *   group:     id, type, title, passageText, speakerAName, speakerAText,
  *              speakerBName, speakerBText, imageUrl, audioUrl, questions
- *   question:  id, question, options, correctOption, explanation, marks
+ *   question:  id, question, options, correctOption, explanation, marks,
+ *              imageUrl, audioUrl
  * Any other field (description, language, active, premium, createdAt) is
  * simply ignored by the student site. Never rename/remove a field in the
  * list above without also updating js/loader.js.
@@ -38,6 +39,15 @@ function buildExportQuestion(ref) {
     explanation: entry.explanation || "",
     marks: typeof entry.marks === "number" ? entry.marks : 1,
     required: !!entry.required,
+    // Previously omitted here — a question's own image/audio (as
+    // opposed to the group's shared media, which was already exported
+    // via group.imageUrl/audioUrl below) was silently dropped from
+    // every export, so it could never reach a real student exam no
+    // matter how correctly the editor/renderer displayed it. See the
+    // matching fix in js/loader.js's normalizeQuestion(), which must
+    // read these same two fields back out on the exam side.
+    imageUrl: entry.imageUrl || null,
+    audioUrl: entry.audioUrl || null,
   };
 }
 
