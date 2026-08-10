@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
 <title>Result | NMT CBT</title>
 <link rel="icon" href="assets/icons/logo.svg" type="image/svg+xml" />
 <link rel="stylesheet" href="css/style.css?v=8" />
-<link rel="stylesheet" href="css/exam.css?v=15" />
-<link rel="stylesheet" href="css/result.css?v=6" />
+<link rel="stylesheet" href="css/exam.css?v=16" />
+<link rel="stylesheet" href="css/result.css?v=7" />
 <link rel="stylesheet" href="css/responsive.css?v=6" />
 </head>
 <body class="result-body">
@@ -43,7 +43,25 @@
     </div>
 
     <div class="result-zoom-content" id="resultZoomContent">
-    <section class="jft-result-intro">
+    <header class="result-page-header">
+      <button type="button" class="icon-btn" id="resultBackBtn" aria-label="Go back">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="result-page-header-text">
+        <h1 id="resultHeaderTitle">Result</h1>
+        <p id="resultHeaderMeta"></p>
+      </div>
+    </header>
+
+    <section class="result-motivation-card" id="resultMotivationCard">
+      <div class="result-motivation-icon" aria-hidden="true">✨</div>
+      <h2 id="resultMotivationTitle">Great job!</h2>
+      <p id="resultMotivationBody"></p>
+    </section>
+
+    <p class="result-test-title-subtle" id="resultTestTitleSubtle"></p>
+
+    <section class="jft-result-intro jft-lang-block">
       <h1 class="jft-result-title-ja" id="resultTitleJa">試験の結果をお知らせします。</h1>
       <p class="jft-result-title-en" id="resultTitleEn">Your test results are as follows.</p>
       <p class="result-test-meta" id="resultTestMeta"></p>
@@ -51,16 +69,19 @@
 
     <section class="card jft-score-panel">
       <div class="jft-score-panel-header">
-        <div class="jft-score-label">
+        <h2 class="jft-score-range-title">Score Range</h2>
+        <div class="jft-score-label jft-lang-block">
           <span class="jft-score-label-ja">総合得点</span>
           <span class="jft-score-label-en">Total Score</span>
         </div>
-        <div class="jft-score-range-label">
+        <div class="jft-score-range-label jft-lang-block">
           <span class="jft-score-label-ja">得点範囲</span>
           <span class="jft-score-label-en">Range of Scores</span>
           <span class="jft-score-range-value" id="scoreRangeValue"></span>
         </div>
       </div>
+
+      <div class="jft-pass-fail-badge" id="jftPassFailBadge">--</div>
 
       <div class="jft-score-big" id="jftScoreBig">0 <span class="jft-score-unit">points</span></div>
 
@@ -83,17 +104,21 @@
         </div>
       </div>
 
-      <div class="jft-pass-fail-badge" id="jftPassFailBadge">--</div>
-
-      <p class="jft-result-message-ja" id="resultMessageJa"></p>
+      <p class="jft-result-message-ja jft-lang-block" id="resultMessageJa"></p>
       <p class="jft-result-message-en" id="resultMessageEn"></p>
     </section>
 
     <section class="card jft-section-results">
-      <h2 class="jft-section-results-title-ja">セクション毎の正答率は次のとおりです。</h2>
-      <p class="jft-section-results-title-en">The percentage of correct answers for each section are as follows.</p>
+      <h2 class="jft-section-results-title-en-main">Section Performance</h2>
+      <h2 class="jft-section-results-title-ja jft-lang-block">セクション毎の正答率は次のとおりです。</h2>
+      <p class="jft-section-results-title-en jft-lang-block">The percentage of correct answers for each section are as follows.</p>
 
       <div id="sectionResultsList"></div>
+    </section>
+
+    <section class="card result-extra-info" id="resultExtraInfo" hidden>
+      <h2>Additional Result Information</h2>
+      <div id="resultExtraInfoList"></div>
     </section>
     </div>
 
@@ -122,6 +147,6 @@
     <p>&copy; <span id="year"></span> Nihongo Mock Test.</p>
   </footer>
 
-  <script type="module" src="js/result.js?v=11"></script>
+  <script type="module" src="js/result.js?v=13"></script>
 </body>
 </html>
