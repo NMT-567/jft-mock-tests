@@ -738,4 +738,25 @@
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
 }
-#groupContent { zoom: var(--exam-zoom); }
+/* =========================================================
+   EXAM CONTENT PINCH-ZOOM — exam.html only. Android Chrome/
+   Edge/Firefox ignore the viewport meta's zoom settings for the
+   entire duration document.fullscreenElement is set (confirmed:
+   Chromium bug 736520, whatwg/fullscreen#111) — this is the
+   browser itself, not fixable via CSS/meta/JS. Since fullscreen
+   is mandatory for this exam, native pinch zoom is unavailable
+   for the whole exam on those browsers, so this scales ONLY the
+   question content (never the header, section tabs, bottom nav,
+   or the fullscreen-lock overlay — all untouched siblings) via a
+   real two-finger pinch tracked with Pointer Events, see
+   js/exam.js's initExamContentZoom(). transform-origin is moved
+   to the pinch's own midpoint at the START of each gesture (not
+   animated, not centered by default) so the content under the
+   fingers stays visually anchored for that gesture's duration —
+   deliberately simpler than compounding translate+scale across
+   gestures, which is fragile and unnecessary for how this is
+   actually used (one continuous pinch at a time). No transition
+   here: a pinch must track finger movement 1:1 in real time, not
+   lag behind an eased animation.
+   ========================================================= */
+.exam-zoom-content { transform-origin: 50% 0; }

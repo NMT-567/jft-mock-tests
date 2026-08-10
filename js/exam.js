@@ -119,6 +119,7 @@ let fullscreenGuard = null;
  * rather than each call site re-deriving it. */
 let isFullscreenLocked = false;
 let pendingFullscreenConfirmedCallback = null;
+const examContentZoom = initExamContentZoom(els.groupContent);
 let lastRenderedSectionIndex = -1;
 let backButtonTrapActive = false;
 let pendingRetryIsAutoSubmit = false; // set by showSubmitFailedModal(), read by the retry button's handler
@@ -345,12 +346,120 @@ async function requestFullscreenAndVerify() {
  * so there is one listener for the entire page lifetime, not one per
  * lock/unlock cycle.
  */
+/**
+ * Two-finger pinch-to-zoom for the exam content ONLY (see
+ * .exam-zoom-content in css/exam.css for why this exists at all —
+ * Android Chrome/Edge/Firefox ignore native viewport zoom for the
+ * entire time the exam is in mandatory fullscreen). Built on Pointer
+ * Events rather than raw touch events so it works uniformly across
+ * touch/pen without a separate code path.
+ *
+ * enable()/disable() are called from the fullscreen lock/unlock
+ * transitions below — the gesture is only ever actually listening
+ * while the exam is genuinely in fullscreen and unlocked, so it never
+ * competes with native browser zoom outside fullscreen (where zoom
+ * already works normally and needs no help) and never fires while the
+ * fullscreen-lock overlay is covering the content anyway.
+ *
+ * Deliberately scoped to `target` alone: preventDefault() is only ever
+ * called on this element's own pointermove, and only once a genuine
+ * second finger is actually down — one-finger scroll/tap and every
+ * other element on the page (bottom nav, header, the lock modal) are
+ * never touched by this listener at all.
+ */
+function initExamContentZoom(target) {
+  const MIN_SCALE = 1; // never shrink below natural size — nothing to gain from that for reading exam content
+  const MAX_SCALE = 2.5;
+  const pointers = new Map(); // pointerId -> {x, y}
+  let scale = 1;
+  let startDistance = 0;
+  let startScale = 1;
+  let enabled = false;
+
+  function distanceBetween(a, b) {
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  }
+
+  function beginPinch() {
+    const [a, b] = [...pointers.values()];
+    startDistance = distanceBetween(a, b);
+    startScale = scale;
+    // Anchor the CURRENT pinch's zoom-in/out around this gesture's own
+    // midpoint, in the target's own local (untransformed) coordinate
+    // space — converted via getBoundingClientRect(), which already
+    // reflects whatever scale is currently applied. Deliberately not
+    // compounded/tracked across separate pinch gestures (see the CSS
+    // comment) — simpler and robust for the actual one-pinch-at-a-time
+    // way this is used, at the cost of a small, harmless visual
+    // "recenter" if a later pinch starts from a different point.
+    const rect = target.getBoundingClientRect();
+    const midX = (a.x + b.x) / 2;
+    const midY = (a.y + b.y) / 2;
+    const originXPct = rect.width > 0 ? ((midX - rect.left) / rect.width) * 100 : 50;
+    const originYPct = rect.height > 0 ? ((midY - rect.top) / rect.height) * 100 : 50;
+    target.style.transformOrigin = `${originXPct}% ${originYPct}%`;
+  }
+
+  function applyScale() {
+    target.style.transform = scale === 1 ? "" : `scale(${scale})`;
+  }
+
+  function onPointerDown(e) {
+    if (!enabled || e.pointerType !== "touch") return; // mouse/pen wheel-zoom is a different, already-working gesture outside this fullscreen-only concern
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size === 2) beginPinch();
+  }
+
+  function onPointerMove(e) {
+    if (!enabled || !pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size !== 2) return;
+    // Only ever preventDefault() here, only once a real second finger
+    // is down on THIS element — never globally, never on one-finger
+    // touchmove (that stays completely untouched, so normal scrolling
+    // and tapping answer options work exactly as before).
+    e.preventDefault();
+    const [a, b] = [...pointers.values()];
+    const dist = distanceBetween(a, b);
+    if (startDistance > 0) {
+      scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, startScale * (dist / startDistance)));
+      applyScale();
+    }
+  }
+
+  function onPointerEnd(e) {
+    pointers.delete(e.pointerId);
+    if (pointers.size < 2) startDistance = 0;
+  }
+
+  target.addEventListener("pointerdown", onPointerDown);
+  target.addEventListener("pointermove", onPointerMove);
+  target.addEventListener("pointerup", onPointerEnd);
+  target.addEventListener("pointercancel", onPointerEnd);
+
+  return {
+    enable() { enabled = true; },
+    // Stops tracking new gestures immediately but deliberately leaves
+    // whatever scale is currently applied untouched — the fullscreen-
+    // lock overlay covers the content anyway, and there's no reason to
+    // snap the student's chosen zoom level back to 100% just because
+    // fullscreen was briefly lost.
+    disable() {
+      enabled = false;
+      pointers.clear();
+      startDistance = 0;
+    },
+  };
+}
+
 function armFullscreenLock() {
   if (fullscreenGuard) return;
+  examContentZoom.enable();
   fullscreenGuard = initFullscreenGuard(() => {
     if (isFullscreenLocked) return; // already locked — never double-lock/double-log on a rapid repeat exit
     isFullscreenLocked = true;
     if (timer) timer.stop();
+    examContentZoom.disable();
     logSecurityEvent("fullscreen_exited");
     els.fullscreenLockError.hidden = true;
     if (!els.fullscreenLockModal.open) els.fullscreenLockModal.showModal();
@@ -1311,6 +1420,7 @@ function bindEvents() {
       cb();
     } else {
       isFullscreenLocked = false;
+      examContentZoom.enable();
       logSecurityEvent("fullscreen_entered");
       if (timer) timer.start();
     }
