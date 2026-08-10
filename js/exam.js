@@ -868,7 +868,18 @@ function findMissingRequiredQuestions(sectionIndex = null) {
     .filter((entry) => entry.required && (state.answers[entry.id] === undefined || state.answers[entry.id] === null));
 }
 
+// Single authoritative guard against duplicate submission — the ONLY
+// place that can be entered from multiple independent triggers at
+// once (timer expiry, the Finish button, and a Retry click could in
+// principle all reach submitTest() within the same tick). Reset to
+// false only on a genuine failure path (see the two `return` points
+// below) so an explicit Retry can still go through; left true forever
+// on success, since the page navigates away right after anyway.
+let submissionInProgress = false;
+
 async function submitTest(isAutoSubmit = false) {
+  if (submissionInProgress) return;
+  submissionInProgress = true;
   if (timer) timer.stop();
   logSecurityEvent("exam_submitted");
 
@@ -897,6 +908,7 @@ async function submitTest(isAutoSubmit = false) {
   // place, so there'd be nothing meaningful to score locally even if we
   // tried.
   if (!state.attemptId) {
+    submissionInProgress = false;
     showSubmitFailedModal(isAutoSubmit, "No attempt was recorded for this exam session — please check your connection and try again.");
     return;
   }
@@ -919,6 +931,7 @@ async function submitTest(isAutoSubmit = false) {
     // the client never had correctOption for a real student's session,
     // so there is nothing honest to show. Keep the session (answers are
     // NOT lost) and offer a retry instead.
+    submissionInProgress = false;
     showSubmitFailedModal(isAutoSubmit);
     return;
   }
@@ -1150,13 +1163,20 @@ updateZoomModeForFullscreen();
 /* =========================================================
    SECURITY WIRING (see security.js for what is/isn't enforceable)
    ========================================================= */
+/**
+ * NOTE: "auto_submit" used to be a real, distinct thresholdAction that
+ * called submitTest(true) here. Per explicit spec, security events —
+ * including reaching the max violation count — must never trigger
+ * automatic submission; only the exam timer reaching zero may (see
+ * startTimer()'s onExpire). "auto_submit" is folded into the same
+ * warn-only behavior as "warn" below so any test an admin previously
+ * configured with thresholdAction: "auto_submit" still runs (doesn't
+ * error), but no longer actually submits on it — worth the admin
+ * knowing if they were relying on that setting.
+ */
 function applyIntegrityThresholdAction() {
   switch (test.securitySettings.thresholdAction) {
     case "auto_submit":
-      els.visibilityWarningText.innerHTML = "Maximum allowed violations reached.<br />Your exam is being submitted automatically.";
-      if (!els.visibilityWarningModal.open) els.visibilityWarningModal.showModal();
-      setTimeout(() => submitTest(true), 1500);
-      break;
     case "warn":
       els.visibilityWarningText.innerHTML = "Maximum allowed violations reached.<br />Any further violation may end your exam.";
       if (!els.visibilityWarningModal.open) els.visibilityWarningModal.showModal();
@@ -1263,9 +1283,13 @@ function initSecurity() {
       () => {
         logSecurityEvent("devtools_shortcut_attempt");
         els.devtoolsWarningText.textContent =
-          "Your exam is being submitted automatically because the exam security requirements were interrupted again.";
+          "Your exam session is currently paused because the exam security requirements were interrupted again. Please close developer tools and continue.";
         if (!els.devtoolsWarningModal.open) els.devtoolsWarningModal.showModal();
-        setTimeout(() => submitTest(true), 1500);
+        // Deliberately no longer auto-submits here. Per spec, the ONLY
+        // event allowed to trigger automatic submission is the exam
+        // timer reaching zero (see startTimer()'s onExpire callback) —
+        // a repeated devtools-shortcut attempt is a security EVENT, and
+        // security events are logged/warned, never auto-submitted.
       }
     );
   }
