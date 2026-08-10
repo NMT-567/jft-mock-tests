@@ -1,4 +1,5 @@
 .result-main { padding: 32px 20px 60px; max-width: 760px; }
+.result-zoom-content { zoom: var(--exam-zoom); }
 
 /* =========================================================
    JFT RESULT INTRO

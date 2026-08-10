@@ -10,7 +10,7 @@
 import { loadResult } from "./storage.js?v=7";
 import { supabase } from "./supabaseClient.js?v=1";
 import { requireAuth } from "./auth.js?v=4";
-import { hidePageLoader, initThemeToggle, stampYear, getQueryParam } from "./utils.js?v=6";
+import { hidePageLoader, initThemeToggle, stampYear, getQueryParam, initPinchZoom } from "./utils.js?v=6";
 import { initContentProtection, initFullscreenGuard } from "./security.js?v=5";
 
 const els = {
@@ -39,6 +39,9 @@ const els = {
   resultFullscreenText: document.getElementById("resultFullscreenText"),
   resultFullscreenError: document.getElementById("resultFullscreenError"),
   resultFullscreenBtn: document.getElementById("resultFullscreenBtn"),
+  resultZoomOutBtn: document.getElementById("resultZoomOutBtn"),
+  resultZoomInBtn: document.getElementById("resultZoomInBtn"),
+  resultZoomLevelText: document.getElementById("resultZoomLevelText"),
 };
 
 let resultFullscreenGuard = null;
@@ -88,6 +91,7 @@ async function init() {
   render(result);
   bindEvents();
   if (els.resultMain) initContentProtection(els.resultMain);
+  applyZoom();
   ensureResultFullscreen();
   hidePageLoader();
 }
@@ -207,7 +211,52 @@ function bindEvents() {
     window.location.href = "index.html";
   });
   els.resultFullscreenBtn.addEventListener("click", handleResultFullscreenClick);
+  els.resultZoomOutBtn.addEventListener("click", zoomOut);
+  els.resultZoomInBtn.addEventListener("click", zoomIn);
 }
+
+/* =========================================================
+   ZOOM — same application-level system as exam.js/review.js,
+   scoped to #resultZoomContent only (css/result.css) via the
+   shared --exam-zoom custom property (css/exam.css, already
+   loaded on this page for the fullscreen modal). Previously
+   missing entirely here — the doc that flagged this explicitly
+   noted result.html had no existing zoom infrastructure to hook
+   a pinch gesture into, unlike exam/review which already did.
+   ========================================================= */
+const ZOOM_LEVELS = [80, 90, 100, 110, 120, 130, 140, 150];
+let zoomLevel = 100;
+
+function applyZoom() {
+  document.documentElement.style.setProperty("--exam-zoom", String(zoomLevel / 100));
+  els.resultZoomLevelText.textContent = `${zoomLevel}%`;
+  els.resultZoomOutBtn.disabled = zoomLevel <= ZOOM_LEVELS[0];
+  els.resultZoomInBtn.disabled = zoomLevel >= ZOOM_LEVELS[ZOOM_LEVELS.length - 1];
+}
+function zoomOut() {
+  const idx = ZOOM_LEVELS.indexOf(zoomLevel);
+  if (idx > 0) {
+    zoomLevel = ZOOM_LEVELS[idx - 1];
+    applyZoom();
+  }
+}
+function zoomIn() {
+  const idx = ZOOM_LEVELS.indexOf(zoomLevel);
+  if (idx < ZOOM_LEVELS.length - 1) {
+    zoomLevel = ZOOM_LEVELS[idx + 1];
+    applyZoom();
+  }
+}
+
+// Two-finger pinch drives the exact same zoomLevel/applyZoom() the
+// +/- buttons use — see utils.js's initPinchZoom for why this exists
+// (native pinch is blocked by the Fullscreen API on most mobile
+// browsers, regardless of viewport meta settings).
+initPinchZoom({
+  getLevel: () => zoomLevel,
+  setLevel: (n) => { zoomLevel = n; applyZoom(); },
+  levels: ZOOM_LEVELS,
+});
 
 /* =========================================================
    FULLSCREEN REQUIREMENT — same reused pattern as exam.js's

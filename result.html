@@ -7,7 +7,7 @@
 <link rel="icon" href="assets/icons/logo.svg" type="image/svg+xml" />
 <link rel="stylesheet" href="css/style.css?v=8" />
 <link rel="stylesheet" href="css/exam.css?v=15" />
-<link rel="stylesheet" href="css/result.css?v=5" />
+<link rel="stylesheet" href="css/result.css?v=6" />
 <link rel="stylesheet" href="css/responsive.css?v=6" />
 </head>
 <body class="result-body">
@@ -35,6 +35,14 @@
   </header>
 
   <main class="container result-main security-protected-content">
+    <!-- ZOOM CONTROLS — same application-level zoom system as exam.html/review.html (reuses the shared .exam-zoom-controls/.zoom-btn CSS from css/exam.css, already loaded on this page for the fullscreen modal, and the same --exam-zoom custom property). -->
+    <div class="exam-zoom-controls no-print">
+      <button type="button" class="zoom-btn" id="resultZoomOutBtn" aria-label="Zoom out">−</button>
+      <span class="zoom-level" id="resultZoomLevelText" aria-live="polite">100%</span>
+      <button type="button" class="zoom-btn" id="resultZoomInBtn" aria-label="Zoom in">+</button>
+    </div>
+
+    <div class="result-zoom-content" id="resultZoomContent">
     <section class="jft-result-intro">
       <h1 class="jft-result-title-ja" id="resultTitleJa">試験の結果をお知らせします。</h1>
       <p class="jft-result-title-en" id="resultTitleEn">Your test results are as follows.</p>
@@ -87,6 +95,7 @@
 
       <div id="sectionResultsList"></div>
     </section>
+    </div>
 
     <div class="result-actions no-print">
       <button type="button" class="btn btn-primary btn-lg" id="reviewAnswersBtn">Review Answers</button>
@@ -113,6 +122,6 @@
     <p>&copy; <span id="year"></span> Nihongo Mock Test.</p>
   </footer>
 
-  <script type="module" src="js/result.js?v=10"></script>
+  <script type="module" src="js/result.js?v=11"></script>
 </body>
 </html>
