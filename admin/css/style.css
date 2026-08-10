@@ -14,6 +14,20 @@
 .admin-header-title { font-size: 1.4rem; font-weight: 800; margin: 0; }
 .admin-header-subtitle { color: var(--color-text-muted); margin: 4px 0 0; font-size: 0.9rem; }
 
+/* Scoped to users.html specifically (added as an extra class on its
+   <main>, alongside the existing .container/.dashboard-main/#mainContent
+   — #mainContent is also used by admin/tests.html, so a rule scoped to
+   that id alone would have widened that page too, which wasn't asked
+   for). Overrides .container's global max-width:1180px for this one
+   page only — same specificity (single class), later in the cascade
+   (this stylesheet loads after ../css/style.css), so no !important or
+   extra specificity trick needed. */
+.users-page-main {
+  max-width: min(94vw, 1450px);
+}
+.users-page-main .admin-header { padding: 10px 0 2px; }
+.users-page-main .admin-header-subtitle { margin: 3px 0 0; }
+
 .dashboard-main { padding: 8px 0 60px; }
 
 .dashboard-grid {
@@ -154,9 +168,9 @@ a.action-card { text-decoration: none; color: inherit; }
    ========================================================= */
 .access-summary-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
 }
 .access-summary-card {
   background: var(--color-surface);
@@ -175,9 +189,9 @@ a.action-card { text-decoration: none; color: inherit; }
 .access-filter-chip {
   border: 1px solid var(--color-border);
   background: var(--color-surface);
-  border-radius: 999px;
-  padding: 5px 12px;
-  font-size: 0.8rem;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 0.8125rem;
   cursor: pointer;
   color: var(--color-text-muted);
 }
@@ -202,34 +216,57 @@ a.action-card { text-decoration: none; color: inherit; }
 .bulk-action-toolbar {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   flex-wrap: wrap;
   background: var(--color-primary-light, #eef4ff);
   border: 1px solid var(--color-primary);
   border-radius: 10px;
-  padding: 10px 14px;
-  margin-bottom: 14px;
+  padding: 8px 14px;
+  margin-bottom: 12px;
   font-size: 0.88rem;
   font-weight: 600;
 }
-.bulk-action-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+.bulk-action-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
 
-.duration-choice-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.duration-choice-grid { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
 .duration-choice-btn {
   border: 1px solid var(--color-border);
   background: var(--color-surface);
   border-radius: 8px;
-  padding: 8px 14px;
-  font-size: 0.85rem;
+  padding: 6px 10px;
+  font-size: 0.82rem;
   cursor: pointer;
 }
 .duration-choice-btn.selected { border-color: var(--color-primary); background: var(--color-primary-light, #eef4ff); font-weight: 600; }
+#addStudentUnlimitedBtn.selected { border-color: var(--color-text); background: var(--color-surface-alt); }
+
+/* =========================================================
+   ADD STUDENT — compact card, horizontal layout on desktop
+   (users.html). Email and Access duration sit side by side
+   above a certain width instead of stacking full-height, and
+   the submit button is a sensible width instead of stretching
+   the whole card — both were the biggest single source of the
+   "too tall, too narrow" complaint this pass addresses.
+   ========================================================= */
+.add-student-card { padding: 18px 20px; margin-bottom: 14px; }
+.add-student-row { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+.add-student-field { flex: 1 1 260px; min-width: 220px; }
+.add-student-field-label { display: block; margin-bottom: 4px; }
+.add-student-actions { display: flex; justify-content: flex-end; margin-top: 12px; }
+.add-student-actions .btn { width: auto; min-width: 150px; }
+@media (max-width: 640px) {
+  .add-student-actions { justify-content: stretch; }
+  .add-student-actions .btn { width: 100%; }
+}
 
 /* Responsive: keep the table usable on narrow screens by letting it
    scroll horizontally rather than squeezing every column — a full
    card-layout rebuild was judged out of scope for this pass (see final
    report), but this alone keeps every row/column readable and the
    bulk checkboxes tappable at any width, which was the hard requirement. */
+@media (max-width: 1024px) {
+  .access-summary-grid { grid-template-columns: repeat(3, 1fr); }
+}
 @media (max-width: 720px) {
   #usersTableWrap { overflow-x: auto; }
   .admin-table { min-width: 640px; }
