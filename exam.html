@@ -161,15 +161,45 @@
     <p class="section-transition-arrow" id="sectionTransitionArrowRow" hidden>→ <span id="sectionTransitionToName"></span></p>
   </div>
 
-  <!-- EXAM START NOTICE — shown before the exam begins -->
+  <!-- EXAM START NOTICE — shown before the exam begins. If this test's
+       admin-configured security settings require fullscreen, the Start
+       Exam click also requests it (a real user gesture — required by
+       every browser) and the exam only actually begins once fullscreen
+       is confirmed active; see js/exam.js's handleStartExamClick(). -->
   <dialog id="examStartNoticeModal" class="modal">
     <div class="modal-body">
       <h2>🔒 Exam Mode</h2>
       <p>During the exam:</p>
       <ul class="exam-start-notice-list" id="examStartNoticeList"></ul>
       <p style="font-size:0.8rem;color:var(--color-text-muted);">Exam security controls are enabled. Some operating-system features such as screenshots and screen recording may not be fully controllable by a web browser.</p>
+      <p class="exam-security-modal-error" id="startExamError" hidden>Fullscreen is required to start this exam. Please enter fullscreen and try again.</p>
       <div class="modal-actions">
         <button type="button" class="btn btn-primary" id="startExamBtn">Start Exam</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- FULLSCREEN REQUIRED — the mid-exam lock overlay. Shown the moment
+       fullscreenchange fires with document.fullscreenElement === null
+       while the exam is genuinely active (never during the pre-start
+       gate above, which handles fullscreen failure inline instead).
+       Never Escape-dismissible (see js/exam.js's "cancel" handler,
+       mirroring resumeChoiceModal's own established exception) — the
+       whole point of this overlay is that there is no way past it
+       except actually restoring fullscreen. Reuses .exam-security-modal
+       for the icon/entrance-animation/sizing, same as every other
+       exam-security dialog on this page — nothing new to build. -->
+  <dialog id="fullscreenLockModal" class="modal exam-security-modal" aria-labelledby="fullscreenLockTitle" aria-describedby="fullscreenLockText" aria-modal="true">
+    <div class="modal-body exam-security-modal-body">
+      <div class="exam-security-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+      </div>
+      <h2 id="fullscreenLockTitle">Fullscreen Required</h2>
+      <p id="fullscreenLockText">Fullscreen is required to continue this exam. Your exam is paused until fullscreen is restored.</p>
+      <p class="exam-security-modal-intro" style="font-weight:500;">Your answers and progress are preserved.</p>
+      <p class="exam-security-modal-error" id="fullscreenLockError" hidden>Please allow fullscreen mode to continue.</p>
+      <div class="modal-actions exam-security-modal-actions">
+        <button type="button" class="btn btn-primary exam-security-modal-btn" id="fullscreenLockBtn">Return to Fullscreen</button>
       </div>
     </div>
   </dialog>
@@ -228,6 +258,6 @@
     <p>&copy; 2026 NihongoMockTest. All rights reserved.</p>
   </footer>
 
-  <script type="module" src="js/exam.js?v=35"></script>
+  <script type="module" src="js/exam.js?v=36"></script>
 </body>
 </html>

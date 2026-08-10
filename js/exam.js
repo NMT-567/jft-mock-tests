@@ -18,6 +18,7 @@ import { buildSharedBlock, buildQuestionBlock } from "./groupRenderer.js?v=8";
 import {
   lockdownInputSurface,
   blockKeyboardShortcuts,
+  initFullscreenGuard,
   startDevToolsHeuristic,
   initVisibilityGuard,
 } from "./security.js?v=5";
@@ -28,6 +29,10 @@ const els = {
   examStartNoticeModal: document.getElementById("examStartNoticeModal"),
   examStartNoticeList: document.getElementById("examStartNoticeList"),
   startExamBtn: document.getElementById("startExamBtn"),
+  startExamError: document.getElementById("startExamError"),
+  fullscreenLockModal: document.getElementById("fullscreenLockModal"),
+  fullscreenLockError: document.getElementById("fullscreenLockError"),
+  fullscreenLockBtn: document.getElementById("fullscreenLockBtn"),
   resumeChoiceModal: document.getElementById("resumeChoiceModal"),
   resumeChoiceError: document.getElementById("resumeChoiceError"),
   resumeChoiceStartFreshBtn: document.getElementById("resumeChoiceStartFreshBtn"),
@@ -107,6 +112,13 @@ let state = {
   attemptId: null, // Supabase test_attempts row id, set once startOrResumeAttempt() resolves
 };
 let timer = null;
+let fullscreenGuard = null;
+/** The ONE state guard for the mid-exam fullscreen lock — every exam
+ * action that can change exam state checks this, not document.
+ * fullscreenElement directly, so there's a single source of truth
+ * rather than each call site re-deriving it. */
+let isFullscreenLocked = false;
+let pendingFullscreenConfirmedCallback = null;
 let lastRenderedSectionIndex = -1;
 let backButtonTrapActive = false;
 let pendingRetryIsAutoSubmit = false; // set by showSubmitFailedModal(), read by the retry button's handler
@@ -235,8 +247,10 @@ function finishInitAndRenderExam(isResume) {
   // re-showing it mid-exam would just be friction with no informational
   // value.
   if (isResume) {
-    startTimer();
-    beginSecuredExam(false);
+    runFullscreenGate(() => {
+      startTimer();
+      beginSecuredExam();
+    });
   } else {
     openExamStartNotice();
   }
@@ -295,10 +309,91 @@ async function handleStartFreshChoice(profile, testId, isAnyAdminPreview, previe
  * enforced exam — the fix is to never enter fullscreen in the first
  * place, not to build a replacement zoom system for inside it.
  */
-function beginSecuredExam(isInitialStart) {
+function beginSecuredExam() {
   initSecurity();
   initBackButtonTrap();
-  if (isInitialStart) startTimer();
+}
+
+/** True only when this test's admin-configured security settings actually require fullscreen AND the browser genuinely supports the Fullscreen API — a student on a browser/embedded webview without it is never permanently blocked by a requirement it has no way to satisfy. */
+function fullscreenIsRequired() {
+  return !!test.securitySettings?.requestFullscreen && document.fullscreenEnabled !== false && typeof document.documentElement.requestFullscreen === "function";
+}
+
+/**
+ * Attempts requestFullscreen() and then re-checks document.fullscreenElement
+ * directly rather than trusting the promise alone — a resolved promise
+ * doesn't always mean fullscreen is actually active on every browser,
+ * and a rejected one is the normal, expected outcome when the user
+ * declines/cancels. Must always be called from inside a real click
+ * handler (browsers silently deny a request made otherwise).
+ */
+async function requestFullscreenAndVerify() {
+  if (typeof document.documentElement.requestFullscreen !== "function") return false;
+  try {
+    await document.documentElement.requestFullscreen();
+  } catch {
+    // Rejected/cancelled — expected, not an error to surface; fall
+    // through to the reality-check below.
+  }
+  return !!document.fullscreenElement;
+}
+
+/**
+ * The single fullscreenchange listener for the whole exam, armed
+ * exactly once (guarded below) right after the FIRST successful
+ * fullscreen confirmation — never re-armed on a later resume/re-entry,
+ * so there is one listener for the entire page lifetime, not one per
+ * lock/unlock cycle.
+ */
+function armFullscreenLock() {
+  if (fullscreenGuard) return;
+  fullscreenGuard = initFullscreenGuard(() => {
+    if (isFullscreenLocked) return; // already locked — never double-lock/double-log on a rapid repeat exit
+    isFullscreenLocked = true;
+    if (timer) timer.stop();
+    logSecurityEvent("fullscreen_exited");
+    els.fullscreenLockError.hidden = true;
+    if (!els.fullscreenLockModal.open) els.fullscreenLockModal.showModal();
+  });
+}
+
+/**
+ * Runs onConfirmed() once fullscreen is confirmed active (or immediately,
+ * if this test doesn't require it). Used for BOTH the very first "Start
+ * Exam" click (isPreStart=true — that click IS the user gesture the
+ * request needs) and every resume/reload (isPreStart=false — a page
+ * load is never itself a user gesture, so instead of requesting
+ * anything here, this opens the same lock overlay the mid-exam-exit
+ * case uses and lets ITS button supply the click). One implementation
+ * for both moments rather than two.
+ */
+async function runFullscreenGate(onConfirmed, isPreStart = false) {
+  if (!fullscreenIsRequired()) {
+    onConfirmed();
+    return;
+  }
+  if (document.fullscreenElement) {
+    armFullscreenLock();
+    onConfirmed();
+    return;
+  }
+  if (isPreStart) {
+    els.startExamBtn.disabled = true;
+    els.startExamError.hidden = true;
+    const ok = await requestFullscreenAndVerify();
+    els.startExamBtn.disabled = false;
+    if (ok) {
+      armFullscreenLock();
+      onConfirmed();
+    } else {
+      els.startExamError.hidden = false;
+      els.startExamBtn.textContent = "Enter Fullscreen";
+    }
+  } else {
+    pendingFullscreenConfirmedCallback = onConfirmed;
+    els.fullscreenLockError.hidden = true;
+    if (!els.fullscreenLockModal.open) els.fullscreenLockModal.showModal();
+  }
 }
 
 function openExamStartNotice() {
@@ -565,6 +660,7 @@ function selectOption(questionId, option) {
 }
 
 function toggleBookmark(questionId, btnEl) {
+  if (isFullscreenLocked) return;
   const idx = state.bookmarks.indexOf(questionId);
   if (idx === -1) state.bookmarks.push(questionId);
   else state.bookmarks.splice(idx, 1);
@@ -574,6 +670,7 @@ function toggleBookmark(questionId, btnEl) {
 }
 
 function jumpToQuestionId(questionId) {
+  if (isFullscreenLocked) return;
   const location = findQuestionLocation(test, questionId);
   if (!location) return;
   // Defensive backstop — the palette itself only ever renders the current section's questions (see currentSectionQuestionIndex), but this guards against jumping to a locked/upcoming section by any other path (e.g. a stale anchor).
@@ -593,6 +690,7 @@ function jumpToQuestionId(questionId) {
 }
 
 function goPrev() {
+  if (isFullscreenLocked) return;
   const { first } = sectionPageRange(state.currentSectionIndex);
   if (state.currentPageIndex > first) {
     state.currentPageIndex -= 1;
@@ -603,6 +701,7 @@ function goPrev() {
 }
 
 function goNext() {
+  if (isFullscreenLocked) return;
   const currentGroup = test.pages[state.currentPageIndex];
 
   // Any required question on the page currently being LEFT blocks
@@ -783,6 +882,7 @@ function startTimer() {
    SUBMIT FLOW — iterates every question across every section/group
    ========================================================= */
 function openSubmitConfirm() {
+  if (isFullscreenLocked) return;
   const summary = computeSummary(test.questionIndex, state.answers, state.bookmarks);
   els.confirmAnswered.textContent = String(summary.answered);
   els.confirmUnanswered.textContent = String(summary.unanswered);
@@ -828,6 +928,7 @@ let submissionInProgress = false;
 
 async function submitTest(isAutoSubmit = false) {
   if (submissionInProgress) return;
+  if (isFullscreenLocked) return; // defense-in-depth — goNext()/openSubmitConfirm() already block the normal path here, but this covers any other trigger too
   submissionInProgress = true;
   if (timer) timer.stop();
   logSecurityEvent("exam_submitted");
@@ -1181,9 +1282,43 @@ function bindEvents() {
   });
 
   els.startExamBtn.addEventListener("click", () => {
-    els.examStartNoticeModal.close();
-    beginSecuredExam(true);
+    runFullscreenGate(() => {
+      els.examStartNoticeModal.close();
+      startTimer();
+      beginSecuredExam();
+    }, true);
   });
+
+  // Shared by both moments that show this overlay: a mid-exam exit
+  // (fullscreenGuard already armed, timer already stopped) and a
+  // resume that needs fullscreen reconfirmed before the exam has even
+  // started ticking (pendingFullscreenConfirmedCallback holds what to
+  // run next in that case). See runFullscreenGate()/armFullscreenLock().
+  els.fullscreenLockBtn.addEventListener("click", async () => {
+    els.fullscreenLockError.hidden = true;
+    els.fullscreenLockBtn.disabled = true;
+    const ok = await requestFullscreenAndVerify();
+    els.fullscreenLockBtn.disabled = false;
+    if (!ok) {
+      els.fullscreenLockError.hidden = false;
+      return;
+    }
+    els.fullscreenLockModal.close();
+    if (pendingFullscreenConfirmedCallback) {
+      const cb = pendingFullscreenConfirmedCallback;
+      pendingFullscreenConfirmedCallback = null;
+      armFullscreenLock();
+      cb();
+    } else {
+      isFullscreenLocked = false;
+      logSecurityEvent("fullscreen_entered");
+      if (timer) timer.start();
+    }
+  });
+  // Never Escape-dismissible — the whole point of this overlay is that
+  // there is no way past it except actually restoring fullscreen (same
+  // established exception as resumeChoiceModal above).
+  els.fullscreenLockModal.addEventListener("cancel", (e) => e.preventDefault());
 
   els.stayInSectionBtn.addEventListener("click", () => els.sectionCompleteModal.close());
   els.continueToNextSectionBtn.addEventListener("click", () => {
@@ -1203,6 +1338,17 @@ function bindEvents() {
   });
 
   bindArrowKeyNavigation(goPrev, goNext);
+
+  // Defensive supplement to requestFullscreenAndVerify()'s own reality-
+  // check (document.fullscreenElement) — covers the rare case where a
+  // browser fires this event after an async failure that the request's
+  // own promise didn't clearly reject. Registered once, here, alongside
+  // every other bindEvents() listener (bindEvents itself only ever runs
+  // once per page load — see init()).
+  document.addEventListener("fullscreenerror", () => {
+    if (els.examStartNoticeModal.open) els.startExamError.hidden = false;
+    if (els.fullscreenLockModal.open) els.fullscreenLockError.hidden = false;
+  });
 
   window.addEventListener("beforeunload", (e) => {
     // Skipped once the exam has genuinely finished (allowUnload is only
