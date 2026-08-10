@@ -33,8 +33,8 @@ const els = {
   mainContent: document.getElementById("mainContent"),
   darkModeToggle: document.getElementById("darkModeToggle"),
   addStudentEmailInput: document.getElementById("addStudentEmailInput"),
-  addStudentDurationSelect: document.getElementById("addStudentDurationSelect"),
-  addStudentCustomDate: document.getElementById("addStudentCustomDate"),
+  addStudentDaysInput: document.getElementById("addStudentDaysInput"),
+  addStudentQuickDays: document.getElementById("addStudentQuickDays"),
   addStudentBtn: document.getElementById("addStudentBtn"),
   addStudentMessage: document.getElementById("addStudentMessage"),
   accessSummaryGrid: document.getElementById("accessSummaryGrid"),
@@ -61,15 +61,18 @@ const els = {
   extendAccessDialog: document.getElementById("extendAccessDialog"),
   extendAccessTarget: document.getElementById("extendAccessTarget"),
   extendAccessCurrent: document.getElementById("extendAccessCurrent"),
+  extendUnlimitedWarning: document.getElementById("extendUnlimitedWarning"),
+  extendDaysInput: document.getElementById("extendDaysInput"),
   extendDurationChoices: document.getElementById("extendDurationChoices"),
-  extendCustomDate: document.getElementById("extendCustomDate"),
   extendAccessPreview: document.getElementById("extendAccessPreview"),
   cancelExtendBtn: document.getElementById("cancelExtendBtn"),
   confirmExtendBtn: document.getElementById("confirmExtendBtn"),
   setExpirationDialog: document.getElementById("setExpirationDialog"),
   setExpirationTitle: document.getElementById("setExpirationTitle"),
   setExpirationTarget: document.getElementById("setExpirationTarget"),
-  setExpirationDate: document.getElementById("setExpirationDate"),
+  setExpirationDaysInput: document.getElementById("setExpirationDaysInput"),
+  setExpirationQuickDays: document.getElementById("setExpirationQuickDays"),
+  removeExpirationBtn: document.getElementById("removeExpirationBtn"),
   cancelSetExpirationBtn: document.getElementById("cancelSetExpirationBtn"),
   confirmSetExpirationBtn: document.getElementById("confirmSetExpirationBtn"),
 };
@@ -85,7 +88,6 @@ let activeFilter = "all"; // all | active | expiring | expired | disabled | neve
 let sortMode = "expires_asc";
 
 let extendTargetIds = [];
-let extendSelectedDays = null; // number, or "custom"
 let setExpirationTargetIds = [];
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -138,8 +140,17 @@ function bindEvents() {
   els.addStudentEmailInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") handleAddStudent();
   });
-  els.addStudentDurationSelect.addEventListener("change", () => {
-    els.addStudentCustomDate.hidden = els.addStudentDurationSelect.value !== "custom";
+  els.addStudentQuickDays.querySelectorAll(".duration-choice-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      els.addStudentQuickDays.querySelectorAll(".duration-choice-btn").forEach((b) => b.classList.remove("selected"));
+      btn.classList.add("selected");
+      if (btn.dataset.days !== "unlimited") els.addStudentDaysInput.value = btn.dataset.days;
+    });
+  });
+  // Typing a custom number deselects whichever quick button was active,
+  // including Unlimited — typing IS the admin overriding the preset.
+  els.addStudentDaysInput.addEventListener("input", () => {
+    els.addStudentQuickDays.querySelectorAll(".duration-choice-btn").forEach((b) => b.classList.remove("selected"));
   });
 
   els.userSearchInput.addEventListener("input", render);
@@ -186,17 +197,29 @@ function bindEvents() {
     btn.addEventListener("click", () => {
       els.extendDurationChoices.querySelectorAll(".duration-choice-btn").forEach((b) => b.classList.remove("selected"));
       btn.classList.add("selected");
-      const val = btn.dataset.days;
-      extendSelectedDays = val === "custom" ? "custom" : Number(val);
-      els.extendCustomDate.hidden = val !== "custom";
+      els.extendDaysInput.value = btn.dataset.days;
       updateExtendPreview();
     });
   });
-  els.extendCustomDate.addEventListener("change", updateExtendPreview);
+  els.extendDaysInput.addEventListener("input", () => {
+    els.extendDurationChoices.querySelectorAll(".duration-choice-btn").forEach((b) => b.classList.remove("selected"));
+    updateExtendPreview();
+  });
   els.cancelExtendBtn.addEventListener("click", () => els.extendAccessDialog.close());
   els.confirmExtendBtn.addEventListener("click", confirmExtend);
 
   // Set/Change Expiration dialog
+  els.setExpirationQuickDays.querySelectorAll(".duration-choice-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      els.setExpirationQuickDays.querySelectorAll(".duration-choice-btn").forEach((b) => b.classList.remove("selected"));
+      btn.classList.add("selected");
+      els.setExpirationDaysInput.value = btn.dataset.days;
+    });
+  });
+  els.setExpirationDaysInput.addEventListener("input", () => {
+    els.setExpirationQuickDays.querySelectorAll(".duration-choice-btn").forEach((b) => b.classList.remove("selected"));
+  });
+  els.removeExpirationBtn.addEventListener("click", confirmRemoveExpiration);
   els.cancelSetExpirationBtn.addEventListener("click", () => els.setExpirationDialog.close());
   els.confirmSetExpirationBtn.addEventListener("click", confirmSetExpiration);
 }
@@ -218,22 +241,20 @@ async function handleAddStudent() {
     return;
   }
 
-  const durationVal = els.addStudentDurationSelect.value;
+  const isUnlimited = els.addStudentQuickDays.querySelector('.duration-choice-btn[data-days="unlimited"]')?.classList.contains("selected");
   let pDays = null;
-  let pCustom = null;
-  if (durationVal === "custom") {
-    if (!els.addStudentCustomDate.value) {
-      setAddStudentMessage("Choose a custom expiration date.", "error");
+  if (!isUnlimited) {
+    const days = Number(els.addStudentDaysInput.value);
+    if (!Number.isInteger(days) || days <= 0 || days > 3650) {
+      setAddStudentMessage("Please enter a valid number of days.", "error");
       return;
     }
-    pCustom = new Date(els.addStudentCustomDate.value).toISOString();
-  } else if (durationVal !== "unlimited") {
-    pDays = Number(durationVal);
-  } // else: unlimited -> both stay null
+    pDays = days;
+  }
 
   els.addStudentBtn.disabled = true;
   try {
-    const { error } = await supabase.rpc("admin_add_student", { p_email: email, p_days: pDays, p_custom_expires_at: pCustom });
+    const { error } = await supabase.rpc("admin_add_student", { p_email: email, p_days: pDays, p_custom_expires_at: null });
     if (error) throw error;
     setAddStudentMessage("Student added — access starts the moment they sign in with Google.", "success");
     els.addStudentEmailInput.value = "";
@@ -271,13 +292,16 @@ function computeAccess(user) {
   const now = new Date();
   const msRemaining = expiresAt.getTime() - now.getTime();
   if (msRemaining <= 0) {
-    return { key: "expired", label: "Expired", badgeClass: "access-badge-expired", detail: `Expired ${formatDate(expiresAt)}` };
+    const daysAgo = Math.floor(-msRemaining / 86400000);
+    const detail = daysAgo <= 0 ? "Expired today" : daysAgo === 1 ? "Expired yesterday" : `Expired ${daysAgo} days ago`;
+    return { key: "expired", label: "Expired", badgeClass: "access-badge-expired", detail };
   }
   const daysRemaining = Math.ceil(msRemaining / 86400000);
+  const detail = daysRemaining === 0 ? "Expires today" : daysRemaining === 1 ? "Expires tomorrow" : `Expires in ${daysRemaining} days`;
   if (daysRemaining <= EXPIRING_SOON_DAYS) {
-    return { key: "expiring", label: "Expiring Soon", badgeClass: "access-badge-expiring", detail: `Expires in ${daysRemaining} day${daysRemaining === 1 ? "" : "s"}` };
+    return { key: "expiring", label: "Expiring Soon", badgeClass: "access-badge-expiring", detail };
   }
-  return { key: "active", label: "Active", badgeClass: "access-badge-active", detail: `Expires in ${daysRemaining} days` };
+  return { key: "active", label: "Active", badgeClass: "access-badge-active", detail };
 }
 
 function formatDate(d) {
@@ -308,12 +332,25 @@ function sortUsers(users) {
   switch (sortMode) {
     case "name_asc":
       return arr.sort((a, b) => (a.display_name || a.email).localeCompare(b.display_name || b.email));
+    case "name_desc":
+      return arr.sort((a, b) => (b.display_name || b.email).localeCompare(a.display_name || a.email));
     case "email_asc":
       return arr.sort((a, b) => a.email.localeCompare(b.email));
     case "status":
       return arr.sort((a, b) => computeAccess(a).key.localeCompare(computeAccess(b).key));
     case "last_login_desc":
       return arr.sort((a, b) => new Date(b.last_login_at || 0) - new Date(a.last_login_at || 0));
+    case "created_desc":
+      return arr.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    case "created_asc":
+      return arr.sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
+    case "expires_desc":
+      // Unlimited (null) students are never "expired" or "soonest" — they sort as if furthest in the future, first here.
+      return arr.sort((a, b) => {
+        const ax = a.access_expires_at ? new Date(a.access_expires_at).getTime() : Infinity;
+        const bx = b.access_expires_at ? new Date(b.access_expires_at).getTime() : Infinity;
+        return bx - ax;
+      });
     case "expires_asc":
     default:
       // Nulls (no expiration) sort last — an account with no expiration is never the most urgent to look at.
@@ -545,26 +582,35 @@ async function removeAccess(user) {
    ========================================================= */
 function openExtendDialog(userIds) {
   extendTargetIds = userIds;
-  extendSelectedDays = null;
   els.extendDurationChoices.querySelectorAll(".duration-choice-btn").forEach((b) => b.classList.remove("selected"));
-  els.extendCustomDate.hidden = true;
-  els.extendCustomDate.value = "";
+  els.extendDaysInput.value = "";
   els.confirmExtendBtn.disabled = true;
   els.extendAccessPreview.textContent = "";
 
+  // Unlimited-conversion warning (spec §12) — only meaningful for a
+  // single-student extend, since a bulk selection may mix unlimited and
+  // finite accounts; showing one number's worth of "this will convert
+  // unlimited access" for a mixed batch would be misleading, so the
+  // bulk case just proceeds (each row's own extend math already treats
+  // its own null expiration as "starting from now", which is the
+  // correct behavior — the warning is a heads-up, not a safety gate).
   if (userIds.length === 1) {
     const user = allUsers.find((u) => u.id === userIds[0]);
     els.extendAccessTarget.textContent = `Student: ${user?.email || ""}`;
-    els.extendAccessCurrent.textContent = user?.access_expires_at ? `Current expiration: ${formatDate(user.access_expires_at)}` : "Current expiration: No expiration set";
+    const isUnlimited = !user?.access_expires_at;
+    els.extendAccessCurrent.textContent = isUnlimited ? "Current expiration: No expiration set" : `Current expiration: ${formatDate(user.access_expires_at)}`;
+    els.extendUnlimitedWarning.hidden = !isUnlimited;
   } else {
     els.extendAccessTarget.textContent = `Extend access for ${userIds.length} students`;
     els.extendAccessCurrent.textContent = "";
+    els.extendUnlimitedWarning.hidden = true;
   }
   els.extendAccessDialog.showModal();
 }
 
 function updateExtendPreview() {
-  const valid = extendSelectedDays !== null && (extendSelectedDays !== "custom" || els.extendCustomDate.value);
+  const days = Number(els.extendDaysInput.value);
+  const valid = Number.isInteger(days) && days > 0 && days <= 3650;
   els.confirmExtendBtn.disabled = !valid;
   if (!valid) {
     els.extendAccessPreview.textContent = "";
@@ -573,7 +619,7 @@ function updateExtendPreview() {
   if (extendTargetIds.length === 1) {
     const user = allUsers.find((u) => u.id === extendTargetIds[0]);
     const base = user?.access_expires_at && new Date(user.access_expires_at) > new Date() ? new Date(user.access_expires_at) : new Date();
-    const preview = extendSelectedDays === "custom" ? new Date(els.extendCustomDate.value) : new Date(base.getTime() + extendSelectedDays * 86400000);
+    const preview = new Date(base.getTime() + days * 86400000);
     els.extendAccessPreview.textContent = `New expiration: ${formatDate(preview)}`;
   } else {
     els.extendAccessPreview.textContent = `${extendTargetIds.length} students will be updated.`;
@@ -581,31 +627,45 @@ function updateExtendPreview() {
 }
 
 async function confirmExtend() {
-  if (extendSelectedDays === null) return;
-  const pDays = extendSelectedDays === "custom" ? null : extendSelectedDays;
-  const pCustom = extendSelectedDays === "custom" ? new Date(els.extendCustomDate.value).toISOString() : null;
+  const days = Number(els.extendDaysInput.value);
+  if (!Number.isInteger(days) || days <= 0 || days > 3650) {
+    showToast("Please enter a valid number of days.", "error");
+    return;
+  }
+  const isUnlimitedSingle = extendTargetIds.length === 1 && !els.extendUnlimitedWarning.hidden;
+  if (isUnlimitedSingle) {
+    const confirmed = await confirmDialog(
+      `This student currently has unlimited access. Setting a duration will convert this account from unlimited access to time-limited access. Continue with ${days} day${days === 1 ? "" : "s"}?`,
+      { confirmLabel: `Set ${days}-Day Access` }
+    );
+    if (!confirmed) return;
+  }
 
   els.confirmExtendBtn.disabled = true;
-  await runBulkAction(extendTargetIds, (id) => supabase.rpc("admin_extend_access", { p_user_id: id, p_days: pDays, p_custom_expires_at: pCustom }), "extended");
+  if (extendTargetIds.length > 1) {
+    // Single round trip for the whole batch (spec §21/§22) — see
+    // admin_extend_access_bulk() in 0009_days_based_access.sql.
+    await runBulkRpc(() => supabase.rpc("admin_extend_access_bulk", { p_user_ids: extendTargetIds, p_days: days }), extendTargetIds.length, "extended");
+  } else {
+    await runBulkAction(extendTargetIds, (id) => supabase.rpc("admin_extend_access", { p_user_id: id, p_days: days, p_custom_expires_at: null }), "extended");
+  }
   els.extendAccessDialog.close();
   els.confirmExtendBtn.disabled = false;
   await loadData();
 }
 
 /* =========================================================
-   CHANGE / SET EXPIRATION (single row or bulk)
+   CHANGE / SET EXPIRATION (single row or bulk) — days-based,
+   plus an explicit "Remove expiration" action (sets NULL).
    ========================================================= */
 function openSetExpirationDialog(userIds) {
   setExpirationTargetIds = userIds;
-  els.setExpirationDate.value = "";
+  els.setExpirationQuickDays.querySelectorAll(".duration-choice-btn").forEach((b) => b.classList.remove("selected"));
+  els.setExpirationDaysInput.value = "";
   if (userIds.length === 1) {
     const user = allUsers.find((u) => u.id === userIds[0]);
-    els.setExpirationTitle.textContent = "Change Expiration";
+    els.setExpirationTitle.textContent = "Set Access Duration";
     els.setExpirationTarget.textContent = `Student: ${user?.email || ""}`;
-    if (user?.access_expires_at) {
-      const d = new Date(user.access_expires_at);
-      els.setExpirationDate.value = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-    }
   } else {
     els.setExpirationTitle.textContent = `Set expiration for ${userIds.length} students`;
     els.setExpirationTarget.textContent = "";
@@ -614,18 +674,30 @@ function openSetExpirationDialog(userIds) {
 }
 
 async function confirmSetExpiration() {
-  if (!els.setExpirationDate.value) {
-    showToast("Choose a date and time.", "error");
+  const days = Number(els.setExpirationDaysInput.value);
+  if (!Number.isInteger(days) || days <= 0 || days > 3650) {
+    showToast("Please enter a valid number of days.", "error");
     return;
   }
   const isBulk = setExpirationTargetIds.length > 1;
   if (isBulk) {
-    const confirmed = await confirmDialog(`Set expiration for ${setExpirationTargetIds.length} students to ${formatDateTime(els.setExpirationDate.value)}?`, { confirmLabel: "Apply" });
+    const confirmed = await confirmDialog(`Set expiration for ${setExpirationTargetIds.length} students to ${days} day${days === 1 ? "" : "s"} from now?`, { confirmLabel: "Apply" });
     if (!confirmed) return;
   }
-  const iso = new Date(els.setExpirationDate.value).toISOString();
   els.confirmSetExpirationBtn.disabled = true;
-  await runBulkAction(setExpirationTargetIds, (id) => supabase.rpc("admin_set_expiration", { p_user_id: id, p_expires_at: iso }), "updated");
+  await runBulkAction(setExpirationTargetIds, (id) => supabase.rpc("admin_set_expiration", { p_user_id: id, p_expires_at: null, p_days: days }), "updated");
+  els.setExpirationDialog.close();
+  els.confirmSetExpirationBtn.disabled = false;
+  await loadData();
+}
+
+async function confirmRemoveExpiration() {
+  const ids = setExpirationTargetIds;
+  const label = ids.length === 1 ? (allUsers.find((u) => u.id === ids[0])?.email || "this student") : `${ids.length} students`;
+  const confirmed = await confirmDialog(`Remove the expiration for ${label}? Access will become unlimited.`, { confirmLabel: "Remove Expiration" });
+  if (!confirmed) return;
+  els.confirmSetExpirationBtn.disabled = true;
+  await runBulkAction(ids, (id) => supabase.rpc("admin_set_expiration", { p_user_id: id, p_expires_at: null, p_days: null }), "set to unlimited");
   els.setExpirationDialog.close();
   els.confirmSetExpirationBtn.disabled = false;
   await loadData();
@@ -687,6 +759,35 @@ async function runBulkAction(ids, actionFn, verbPast) {
   } else {
     const failedEmails = failed.map(({ id }) => allUsers.find((u) => u.id === id)?.email || id).join(", ");
     showToast(`${ids.length} selected — ${succeeded} ${verbPast}, ${failed.length} failed (${failedEmails}).`, "error");
+  }
+  render();
+}
+
+/**
+ * Companion to runBulkAction, for the genuine bulk RPCs (spec §21/§22 —
+ * one round trip for the whole batch instead of N). The RPC itself
+ * already did the looping server-side and returns one row per input id
+ * with its own success/error_message — this just renders that result
+ * the same way runBulkAction renders N separate settled promises, so
+ * the two code paths look identical to the admin regardless of which
+ * one ran underneath.
+ */
+async function runBulkRpc(rpcCall, totalCount, verbPast) {
+  const { data, error } = await rpcCall();
+  selectedIds.clear();
+  if (error) {
+    showToast(`Failed: ${error.message}`, "error");
+    render();
+    return;
+  }
+  const rows = data || [];
+  const failed = rows.filter((r) => !r.success);
+  const succeeded = totalCount - failed.length;
+  if (failed.length === 0) {
+    showToast(`${succeeded} student${succeeded === 1 ? "" : "s"} ${verbPast}.`, "success");
+  } else {
+    const failedEmails = failed.map((r) => r.email || r.user_id).join(", ");
+    showToast(`${totalCount} selected — ${succeeded} ${verbPast}, ${failed.length} failed (${failedEmails}).`, "error");
   }
   render();
 }

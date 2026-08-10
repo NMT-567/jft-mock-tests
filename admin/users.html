@@ -40,26 +40,28 @@
       <p style="color:var(--color-text-muted); font-size:0.85rem; margin:0 0 14px;">
         Enter their email — name and profile picture fill in automatically the first time they sign in with Google.
       </p>
-      <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <input type="email" id="addStudentEmailInput" class="text-input" placeholder="student@gmail.com" style="flex:1; min-width:200px;" />
-        <select id="addStudentDurationSelect" class="text-input" style="width:auto;">
-          <option value="1">1 day</option>
-          <option value="3">3 days</option>
-          <option value="7">7 days</option>
-          <option value="14">14 days</option>
-          <option value="30" selected>30 days</option>
-          <option value="60">60 days</option>
-          <option value="90">90 days</option>
-          <option value="180">180 days</option>
-          <option value="365">365 days</option>
-          <option value="unlimited">No expiration</option>
-          <option value="custom">Custom date…</option>
-        </select>
-        <input type="datetime-local" id="addStudentCustomDate" class="text-input" style="width:auto;" hidden />
-        <button type="button" class="btn btn-primary" id="addStudentBtn">Add Student</button>
+      <label class="settings-row-label" style="display:block; margin-bottom:4px;">Email</label>
+      <input type="email" id="addStudentEmailInput" class="text-input" placeholder="student@gmail.com" style="width:100%;" />
+
+      <label class="settings-row-label" style="display:block; margin:12px 0 4px;">Access duration</label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="number" id="addStudentDaysInput" class="text-input" value="30" min="1" max="3650" step="1" style="width:90px;" aria-label="Number of days" />
+        <span style="color:var(--color-text-muted); font-size:0.9rem;">days</span>
       </div>
+      <div class="duration-choice-grid" id="addStudentQuickDays" style="margin-top:8px;">
+        <button type="button" class="duration-choice-btn" data-days="1">1</button>
+        <button type="button" class="duration-choice-btn" data-days="7">7</button>
+        <button type="button" class="duration-choice-btn" data-days="14">14</button>
+        <button type="button" class="duration-choice-btn selected" data-days="30">30</button>
+        <button type="button" class="duration-choice-btn" data-days="60">60</button>
+        <button type="button" class="duration-choice-btn" data-days="90">90</button>
+        <button type="button" class="duration-choice-btn" data-days="365">365</button>
+        <button type="button" class="duration-choice-btn" id="addStudentUnlimitedBtn" data-days="unlimited">Unlimited</button>
+      </div>
+      <button type="button" class="btn btn-primary" id="addStudentBtn" style="margin-top:14px; width:100%;">Add Student</button>
       <p id="addStudentMessage" style="margin:10px 0 0; font-size:0.85rem;" hidden></p>
     </div>
+
 
     <div class="access-summary-grid" id="accessSummaryGrid"></div>
 
@@ -67,11 +69,15 @@
       <input type="text" id="userSearchInput" class="text-input" placeholder="Search by email or name…" style="max-width:280px;" />
       <div class="access-filter-chips" id="accessFilterChips"></div>
       <select id="userSortSelect" class="text-input" style="width:auto; margin-left:auto;">
-        <option value="expires_asc">Expiration date (soonest first)</option>
+        <option value="expires_asc">Expiration — soonest first</option>
+        <option value="expires_desc">Expiration — latest first</option>
         <option value="name_asc">Name (A–Z)</option>
+        <option value="name_desc">Name (Z–A)</option>
         <option value="email_asc">Email (A–Z)</option>
         <option value="status">Status</option>
         <option value="last_login_desc">Last login (recent first)</option>
+        <option value="created_desc">Newest</option>
+        <option value="created_asc">Oldest</option>
       </select>
       <span id="userCount" style="color: var(--color-text-muted); font-size:0.85rem;"></span>
     </div>
@@ -129,15 +135,22 @@
       <h2>Extend Access</h2>
       <p id="extendAccessTarget" style="color:var(--color-text-muted); font-size:0.9rem;"></p>
       <p id="extendAccessCurrent" style="font-size:0.9rem;"></p>
-      <div class="duration-choice-grid" id="extendDurationChoices">
-        <button type="button" class="duration-choice-btn" data-days="7">7 days</button>
-        <button type="button" class="duration-choice-btn" data-days="14">14 days</button>
-        <button type="button" class="duration-choice-btn" data-days="30">30 days</button>
-        <button type="button" class="duration-choice-btn" data-days="60">60 days</button>
-        <button type="button" class="duration-choice-btn" data-days="90">90 days</button>
-        <button type="button" class="duration-choice-btn" data-days="custom">Custom date…</button>
+      <p id="extendUnlimitedWarning" style="font-size:0.85rem; background:#fdf1e0; color:#8a5a10; border-radius:8px; padding:10px 12px; margin:10px 0;" hidden>
+        This student currently has unlimited access. Setting a duration will convert this account from unlimited access to time-limited access.
+      </p>
+      <label class="settings-row-label" style="display:block; margin:10px 0 4px;">Add</label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="number" id="extendDaysInput" class="text-input" min="1" max="3650" step="1" style="width:90px;" aria-label="Number of days to add" />
+        <span style="color:var(--color-text-muted); font-size:0.9rem;">days</span>
       </div>
-      <input type="datetime-local" id="extendCustomDate" class="text-input" style="margin-top:10px;" hidden />
+      <div class="duration-choice-grid" id="extendDurationChoices" style="margin-top:8px;">
+        <button type="button" class="duration-choice-btn" data-days="1">1</button>
+        <button type="button" class="duration-choice-btn" data-days="7">7</button>
+        <button type="button" class="duration-choice-btn" data-days="14">14</button>
+        <button type="button" class="duration-choice-btn" data-days="30">30</button>
+        <button type="button" class="duration-choice-btn" data-days="60">60</button>
+        <button type="button" class="duration-choice-btn" data-days="90">90</button>
+      </div>
       <p id="extendAccessPreview" style="font-size:0.85rem; color:var(--color-text-muted); margin-top:10px;"></p>
       <div class="modal-actions">
         <button type="button" class="btn btn-secondary" id="cancelExtendBtn">Cancel</button>
@@ -148,10 +161,22 @@
 
   <dialog id="setExpirationDialog" class="modal">
     <div class="modal-body">
-      <h2 id="setExpirationTitle">Change Expiration</h2>
+      <h2 id="setExpirationTitle">Set Access Duration</h2>
       <p id="setExpirationTarget" style="color:var(--color-text-muted); font-size:0.9rem;"></p>
-      <label class="settings-row-label" style="display:block; margin-top:12px;">Expiration date &amp; time</label>
-      <input type="datetime-local" id="setExpirationDate" class="text-input" style="margin-top:6px;" />
+      <label class="settings-row-label" style="display:block; margin:12px 0 4px;">Set duration to</label>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <input type="number" id="setExpirationDaysInput" class="text-input" min="1" max="3650" step="1" style="width:90px;" aria-label="Number of days" />
+        <span style="color:var(--color-text-muted); font-size:0.9rem;">days from now</span>
+      </div>
+      <div class="duration-choice-grid" id="setExpirationQuickDays" style="margin-top:8px;">
+        <button type="button" class="duration-choice-btn" data-days="7">7</button>
+        <button type="button" class="duration-choice-btn" data-days="14">14</button>
+        <button type="button" class="duration-choice-btn" data-days="30">30</button>
+        <button type="button" class="duration-choice-btn" data-days="60">60</button>
+        <button type="button" class="duration-choice-btn" data-days="90">90</button>
+        <button type="button" class="duration-choice-btn" data-days="365">365</button>
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm" id="removeExpirationBtn" style="margin-top:12px;">Remove expiration (set to Unlimited)</button>
       <div class="modal-actions">
         <button type="button" class="btn btn-secondary" id="cancelSetExpirationBtn">Cancel</button>
         <button type="button" class="btn btn-primary" id="confirmSetExpirationBtn">Save Changes</button>
@@ -163,6 +188,6 @@
     <p>&copy; <span id="year"></span> Nihongo Mock Test Admin.</p>
   </footer>
 
-  <script type="module" src="js/users.js?v=4"></script>
+  <script type="module" src="js/users.js?v=5"></script>
 </body>
 </html>
