@@ -119,6 +119,11 @@ let fullscreenGuard = null;
  * rather than each call site re-deriving it. */
 let isFullscreenLocked = false;
 let pendingFullscreenConfirmedCallback = null;
+/** True from the moment fullscreen is first confirmed (armFullscreenLock)
+ * until the page is torn down — lets reconcileExamLifecycle() below no-op
+ * safely if a lifecycle event fires before the exam has actually started
+ * (e.g. during the pre-start gate itself). */
+let examIsActive = false;
 const examContentZoom = initExamContentZoom(els.groupContent);
 let lastRenderedSectionIndex = -1;
 let backButtonTrapActive = false;
@@ -454,16 +459,69 @@ function initExamContentZoom(target) {
 
 function armFullscreenLock() {
   if (fullscreenGuard) return;
+  examIsActive = true;
   examContentZoom.enable();
   fullscreenGuard = initFullscreenGuard(() => {
-    if (isFullscreenLocked) return; // already locked — never double-lock/double-log on a rapid repeat exit
-    isFullscreenLocked = true;
-    if (timer) timer.stop();
-    examContentZoom.disable();
-    logSecurityEvent("fullscreen_exited");
-    els.fullscreenLockError.hidden = true;
-    if (!els.fullscreenLockModal.open) els.fullscreenLockModal.showModal();
+    // Deliberately just calls the single reconciler rather than
+    // duplicating lock logic here — this event only proves fullscreen
+    // became null AT THIS MOMENT; reconcileExamLifecycle() re-reads
+    // document.fullscreenElement itself rather than trusting that,
+    // which matters because this callback can fire while the page is
+    // hidden/backgrounded and the true state can have moved on by the
+    // time anything actually runs.
+    reconcileExamLifecycle();
   });
+}
+
+/**
+ * THE single authoritative sync point between the real fullscreen state
+ * (document.fullscreenElement — never visibilityState/blur/focus, which
+ * prove nothing about fullscreen) and the exam's lock UI/state. Called
+ * from three places: fullscreenchange itself (armFullscreenLock above),
+ * the "Return to Fullscreen" button's success path, and the page-
+ * lifecycle listeners below (visibilitychange→visible, pageshow, focus)
+ * — the last group exists specifically because Android can silently
+ * exit and/or re-enter fullscreen across a Home-button/Recent-Apps/
+ * lock-screen cycle without firing (or without this page ever seeing)
+ * a fullscreenchange event for every real transition, which previously
+ * left isFullscreenLocked and the lock dialog's open state stuck out of
+ * sync with reality — showModal() had already run, nothing ever called
+ * close() again because nothing ever told it to, and the exam was
+ * permanently inert behind an overlay with no fullscreenchange left to
+ * fire and fix it. This function fixes that class of bug by re-deriving
+ * the correct state FRESH every time it runs, from document.
+ * fullscreenElement, rather than trusting whatever isFullscreenLocked
+ * already says.
+ *
+ * Fully idempotent: every branch is guarded so a redundant call (state
+ * already correct) changes nothing — no duplicate timer starts, no
+ * duplicate showModal()/close() calls, no duplicate security-event
+ * entries, no requestFullscreen() call of its own (never call that
+ * without a real user gesture — see runFullscreenGate/the button
+ * handler, which are the only two places that do).
+ */
+function reconcileExamLifecycle() {
+  if (!examIsActive || !fullscreenIsRequired()) return;
+  const isFullscreen = !!document.fullscreenElement;
+
+  if (isFullscreen) {
+    if (isFullscreenLocked) {
+      isFullscreenLocked = false;
+      if (els.fullscreenLockModal.open) els.fullscreenLockModal.close();
+      examContentZoom.enable();
+      logSecurityEvent("fullscreen_entered");
+      if (timer) timer.start();
+    }
+    // else: already unlocked and fullscreen is genuinely active — a true no-op.
+  } else {
+    if (!isFullscreenLocked) {
+      isFullscreenLocked = true;
+      if (timer) timer.stop();
+      examContentZoom.disable();
+      logSecurityEvent("fullscreen_exited");
+    }
+    if (!els.fullscreenLockModal.open) els.fullscreenLockModal.showModal();
+  }
 }
 
 /**
@@ -1419,10 +1477,11 @@ function bindEvents() {
       armFullscreenLock();
       cb();
     } else {
-      isFullscreenLocked = false;
-      examContentZoom.enable();
-      logSecurityEvent("fullscreen_entered");
-      if (timer) timer.start();
+      // Fullscreen is now genuinely active (just confirmed above) —
+      // let the single reconciler do the actual unlock, exactly the
+      // same way it would if Android had silently restored fullscreen
+      // on its own; no logic duplicated here.
+      reconcileExamLifecycle();
     }
   });
   // Never Escape-dismissible — the whole point of this overlay is that
@@ -1448,6 +1507,23 @@ function bindEvents() {
   });
 
   bindArrowKeyNavigation(goPrev, goNext);
+
+  // Android can silently exit and/or re-enter fullscreen across a
+  // Home-button/Recent-Apps/lock-screen cycle — sometimes without this
+  // page ever seeing a fullscreenchange event for every real transition
+  // involved. None of these three events is itself proof that
+  // fullscreen changed (visibility/focus prove nothing about
+  // fullscreen) — each one is only a prompt to re-check the real
+  // document.fullscreenElement via reconcileExamLifecycle(), which is
+  // exactly what actually fixes the stale-lock/stale-dialog bug this
+  // was added for. Registered once, here, alongside every other
+  // bindEvents() listener (bindEvents itself only ever runs once per
+  // page load — see init()) — never duplicated.
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") reconcileExamLifecycle();
+  });
+  window.addEventListener("pageshow", () => reconcileExamLifecycle());
+  window.addEventListener("focus", () => reconcileExamLifecycle());
 
   // Defensive supplement to requestFullscreenAndVerify()'s own reality-
   // check (document.fullscreenElement) — covers the rare case where a
