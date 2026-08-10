@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
 <title>Exam in Progress | NMT CBT</title>
 <link rel="icon" href="assets/icons/logo.svg" type="image/svg+xml" />
-<link rel="stylesheet" href="css/style.css?v=8" />
-<link rel="stylesheet" href="css/exam.css?v=15" />
+<link rel="stylesheet" href="css/style.css?v=9" />
+<link rel="stylesheet" href="css/exam.css?v=17" />
 <link rel="stylesheet" href="css/responsive.css?v=6" />
 </head>
 <body class="exam-body no-select">
@@ -59,9 +59,14 @@
   </div>
 
   <!-- ZOOM CONTROLS — application-level zoom (css `zoom` property, scoped
-       to #groupContent only) so it works independently of browser
-       fullscreen/native zoom and never touches the fixed header/bottom-nav. -->
-  <div class="exam-zoom-controls no-print">
+       to #groupContent only). Only ever shown/active while the exam is in
+       Fullscreen API fullscreen, since that's the ONLY situation where the
+       browser's own native pinch/page zoom is unavailable (a real, still-
+       current platform limitation on Android Chrome/Firefox/Edge — the
+       viewport meta's zoom settings are ignored while fullscreenElement is
+       set). Outside fullscreen, this is hidden and native browser zoom
+       handles everything instead — see js/exam.js's updateZoomModeForFullscreen(). -->
+  <div class="exam-zoom-controls no-print" id="examZoomControls" hidden>
     <button type="button" class="zoom-btn" id="zoomOutBtn" aria-label="Zoom out">−</button>
     <span class="zoom-level" id="zoomLevelText" aria-live="polite">100%</span>
     <button type="button" class="zoom-btn" id="zoomInBtn" aria-label="Zoom in">+</button>
@@ -186,6 +191,27 @@
     </div>
   </dialog>
 
+  <!-- RESUME OR START FRESH — shown instead of auto-resuming whenever a
+       genuinely still-open (in_progress, not submitted) attempt exists
+       for THIS test. Reuses .exam-security-modal for the icon/entrance
+       animation/mobile-sizing/backdrop-blur the spec asks for — nothing
+       new to build there. Exam initialization does not proceed at all
+       until one of these two buttons is clicked; see js/exam.js. -->
+  <dialog id="resumeChoiceModal" class="modal exam-security-modal" aria-labelledby="resumeChoiceTitle" aria-describedby="resumeChoiceText" aria-modal="true">
+    <div class="modal-body exam-security-modal-body">
+      <div class="exam-security-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11a9 9 0 1 1 2.6 6.4M3 11v6m0-6h6"/></svg>
+      </div>
+      <h2 id="resumeChoiceTitle">Resume Your Test?</h2>
+      <p id="resumeChoiceText">You already have an unfinished attempt for this test. Your previous progress has been saved.</p>
+      <p class="exam-security-modal-error" id="resumeChoiceError" hidden>Something went wrong starting a fresh attempt. Please try again.</p>
+      <div class="modal-actions resume-choice-actions">
+        <button type="button" class="btn btn-secondary exam-security-modal-btn" id="resumeChoiceStartFreshBtn">Start from Beginning</button>
+        <button type="button" class="btn btn-primary exam-security-modal-btn" id="resumeChoiceResumeBtn">Resume Test</button>
+      </div>
+    </div>
+  </dialog>
+
   <!-- SECURITY TOASTS — small, auto-dismissing, never an alert() -->
   <div class="security-toast-container no-print" id="securityToastContainer" aria-live="polite"></div>
 
@@ -237,6 +263,6 @@
     </div>
   </dialog>
 
-  <script type="module" src="js/exam.js?v=30"></script>
+  <script type="module" src="js/exam.js?v=32"></script>
 </body>
 </html>

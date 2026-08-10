@@ -605,6 +605,8 @@
 }
 .exam-security-icon svg { width: 28px; height: 28px; }
 
+.resume-choice-actions { flex-direction: column; gap: 10px; }
+
 /* Soft, quick entrance — the shared .modal::backdrop dim/blur (css/style.css)
    already applies instantly to every dialog; this animates the CARD itself
    only, so no other modal's opening behavior changes. */
@@ -633,13 +635,29 @@
 /* =========================================================
    ZOOM CONTROLS — compact, subtle, scrolls WITH the content
    (deliberately not fixed) so it never competes with the
-   already-tight header row or the bottom nav. Scales ONLY the
-   question content via the CSS `zoom` property on one wrapper —
-   deliberately not `transform: scale`, which can break scroll
-   position, click coordinates, and fixed-layout children. `zoom`
-   reflows the box itself rather than repainting a scaled image,
-   so none of those issues apply, and everything outside
-   #groupContent (header, section tabs, bottom nav) is untouched.
+   already-tight header row or the bottom nav. Scales the
+   content wrapper (#groupContent on exam.html, .review-list on
+   review.html, .result-zoom-content on result.html — all driven
+   by the same --exam-zoom custom property) via the CSS `zoom`
+   property — deliberately not `transform: scale`, which can
+   break scroll position, click coordinates, and fixed-layout
+   children. `zoom` reflows the box itself (images, cards, and
+   spacing included, not just text) rather than repainting a
+   scaled image, so none of those issues apply, and everything
+   outside the zoomed wrapper (header, section tabs, bottom nav)
+   is untouched.
+
+   Shown and active ONLY while the page is in Fullscreen API
+   fullscreen (see the `updateZoomModeForFullscreen()` function in
+   each of js/exam.js, js/review.js, js/result.js) — the ONE
+   situation where the browser's own native pinch/page zoom is
+   unavailable (Android Chrome/Firefox/Edge ignore the viewport
+   meta's zoom settings entirely while fullscreenElement is set;
+   a real, still-current platform limitation, not fixable via
+   CSS/meta alone). Outside fullscreen these controls are
+   `hidden` and native browser zoom is what the person actually
+   uses instead — `--exam-zoom` is reset to 1 the moment
+   fullscreen exits, so nothing is left artificially scaled.
    ========================================================= */
 :root { --exam-zoom: 1; }
 .exam-zoom-controls {
@@ -666,6 +684,13 @@
 }
 .zoom-btn:active { background: var(--color-surface-alt); }
 .zoom-btn:disabled { opacity: 0.4; }
+/* Without this, [hidden] alone would NOT actually hide the controls: the
+   class's own `display: flex` above has the same specificity as the
+   browser's default `[hidden] { display: none }` UA rule, and an author
+   rule always wins a same-specificity tie against a UA rule regardless of
+   source order. Needed now that the controls are shown/hidden dynamically
+   based on fullscreen state (see js/exam.js, js/review.js, js/result.js). */
+.exam-zoom-controls[hidden] { display: none; }
 .zoom-level {
   min-width: 48px;
   text-align: center;

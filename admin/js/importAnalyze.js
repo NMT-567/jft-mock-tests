@@ -40,18 +40,36 @@ export const FIXED_SECTIONS = [
    ========================================================= */
 /**
  * A passage/group header is a record that isn't a real question at all:
- * zero options, no correct answer, zero marks, and an instructional
- * "answer the following N questions" sentence that DECLARES how many
- * child records follow it. Matches the spec's example exactly. Returns
- * the declared count N, or null if this isn't a header.
+ * zero options, no correct answer, and an instructional "answer the
+ * following N questions" sentence that DECLARES how many child records
+ * follow it. Matches the spec's example exactly. Returns the declared
+ * count N, or null if this isn't a header.
+ *
+ * Deliberately does NOT gate on marks (an earlier version required
+ * marks to be falsy too) — real source data has surfaced a header
+ * record with a stray nonzero marks value (a leftover default from the
+ * sibling project's authoring tool, not a meaningful score) that is
+ * still unmistakably a header by every other signal: zero options, no
+ * correct answer, and the exact declarative sentence. Zero options
+ * alone already makes it un-scoreable regardless of what marks says.
+ *
+ * The declared count is matched as EITHER an ASCII digit OR a
+ * full-width Japanese digit (U+FF10-U+FF19, e.g. "５") — real source
+ * data has a header written as "...following ５ questions" (a mix of
+ * English instruction text with a full-width numeral, presumably typed
+ * on a Japanese IME), which plain \d does not match at all since it
+ * only recognizes ASCII 0-9. Full-width digits are normalized to ASCII
+ * before parsing so the declared count still comes out as a real number
+ * either way.
  */
 export function detectPassageHeaderCount(raw) {
   const options = Array.isArray(raw.options) ? raw.options : [];
   if (options.length !== 0) return null;
   if (raw.correctOption) return null;
-  if (raw.marks) return null;
-  const match = /answer the following (\d+) questions?/i.exec(raw.question || "");
-  return match ? parseInt(match[1], 10) : null;
+  const match = /answer the following ([0-9０-９]+) questions?/i.exec(raw.question || "");
+  if (!match) return null;
+  const normalized = match[1].replace(/[０-９]/g, (d) => String.fromCharCode(d.charCodeAt(0) - 0xff10 + 0x30));
+  return parseInt(normalized, 10);
 }
 
 /**
@@ -249,7 +267,11 @@ function detectGroupsFromSource(test) {
           id: g.id,
           question: g.title || g.instructions || "",
           passageText: g.passageText || "",
-          imageUrl: null, // this schema has no group-level shared image — see fromSourceGroup note above
+          // This schema's OWN groups[] entries never carry a shared image
+          // (imageUrl isn't even a field here) — starts null and is filled
+          // in just below, IF this group turns out to have a header-shaped
+          // pseudo-question among its children carrying the real one.
+          imageUrl: null,
           audioUrl: g.audioUrl || "",
         },
         groupType: g.type || null,
@@ -262,6 +284,30 @@ function detectGroupsFromSource(test) {
       passageGroups.push(entry);
     }
     entry.children.push(raw);
+  });
+
+  // Pull any header/instructional pseudo-question out of each group's
+  // children before it can reach the validator as a "real" question.
+  // The sibling project's authoring tool has no group-level passage-
+  // image field, so this pattern has repeatedly shown up: a fake first
+  // "question" — zero options, no correct answer, an "answer the
+  // following N questions" sentence — that is actually just carrying
+  // the group's real passage image (confirmed across every affected
+  // group so far: the header record's own imageUrl IS the scanned
+  // reading passage). Left in as a child, it both inflates the group's
+  // question count past the 5-question cap and can never pass
+  // validation itself (0 options can never satisfy the 3-4-option
+  // rule). Detected via the same detectPassageHeaderCount() the older
+  // text-heuristic path (detectGroups) already uses, so both import
+  // paths share one definition of "what counts as a header" rather
+  // than silently drifting apart.
+  passageGroups.forEach((entry) => {
+    const headerIndex = entry.children.findIndex((c) => detectPassageHeaderCount(c) !== null);
+    if (headerIndex === -1) return;
+    const [headerChild] = entry.children.splice(headerIndex, 1);
+    if (!entry.headerRaw.question) entry.headerRaw.question = headerChild.question || "";
+    if (!entry.headerRaw.imageUrl) entry.headerRaw.imageUrl = headerChild.imageUrl || null;
+    if (!entry.headerRaw.audioUrl) entry.headerRaw.audioUrl = headerChild.audioUrl || "";
   });
 
   // Resolve each group's section title: prefer whatever exact label the
@@ -415,9 +461,12 @@ export function buildImportPlan(json) {
   // schema has exactly one imageUrl slot per group, shared by every
   // child, so a child's own separate image has nowhere lossless to go.
   // Skipped entirely for real source groups (g.fromSourceGroup) — that
-  // schema never had a group-level shared image in the first place (see
-  // detectGroupsFromSource's note), so every child's own imageUrl is
-  // simply correct as-is, not a conflict with anything.
+  // schema's groups[] entries have no shared-image field of their own
+  // (the one exception, a header-shaped pseudo-question's image, is
+  // already extracted into headerRaw.imageUrl by detectGroupsFromSource
+  // before this check runs, so it's never among g.children by the time
+  // we get here), so every remaining child's own imageUrl is simply
+  // correct as-is, not a conflict with anything.
   const imageConflicts = [];
   passageGroups.forEach((g) => {
     if (g.fromSourceGroup) return;

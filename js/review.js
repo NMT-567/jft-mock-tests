@@ -3,7 +3,7 @@
  * Controller for review.html — displays every question with the student's
  * answer, correct answer, explanation, and supports filter + search.
  */
-import { loadResult } from "./storage.js?v=7";
+import { loadResult } from "./storage.js?v=8";
 import { supabase } from "./supabaseClient.js?v=1";
 import { requireAuth } from "./auth.js?v=4";
 import { hidePageLoader, initThemeToggle, renderRichText, escapeHtml, getQueryParam, initPinchZoom } from "./utils.js?v=6";
@@ -21,6 +21,7 @@ const els = {
   reviewZoomOutBtn: document.getElementById("reviewZoomOutBtn"),
   reviewZoomInBtn: document.getElementById("reviewZoomInBtn"),
   reviewZoomLevelText: document.getElementById("reviewZoomLevelText"),
+  reviewZoomControls: document.getElementById("reviewZoomControls"),
 };
 
 let result = null;
@@ -117,9 +118,23 @@ function ensureReviewFullscreen() {
 }
 
 /* =========================================================
-   ZOOM — same application-level system as exam.js, scoped to
-   .review-list only (css/review.css) via the shared --exam-zoom
-   custom property (css/exam.css, now loaded on this page too).
+   ZOOM — adaptive, same approach as exam.js: native browser
+   pinch/page zoom is used whenever this page is NOT in Fullscreen
+   API fullscreen (the viewport meta already permits it — see
+   review.html). The application-level CSS-zoom system below (via
+   the shared --exam-zoom custom property, scoped to .review-list
+   in css/review.css) is used ONLY while fullscreen IS active,
+   because Android Chrome/Firefox/Edge ignore the viewport meta's
+   zoom settings entirely for the duration of Fullscreen API
+   fullscreen — a real, still-current platform limitation, not
+   something fixable via meta/CSS/JS alone. Note that fullscreen
+   is required unconditionally on this page (see above), so in
+   practice this page spends nearly all of its time in the
+   fullscreen branch below — but the same document.fullscreenElement-
+   driven check is used regardless, rather than assuming, so this
+   still behaves correctly for a browser that can't support
+   fullscreen at all (openReviewFullscreenRequirement's own
+   fallback) or for the brief moment before it's granted.
    ========================================================= */
 const REVIEW_ZOOM_LEVELS = [80, 90, 100, 110, 120, 130, 140, 150];
 let reviewZoomLevel = 100;
@@ -147,12 +162,35 @@ function zoomInReview() {
 
 // Two-finger pinch drives the exact same reviewZoomLevel/
 // applyReviewZoom() the +/- buttons use — see utils.js's
-// initPinchZoom and exam.js's matching wiring for why this exists.
-initPinchZoom({
-  getLevel: () => reviewZoomLevel,
-  setLevel: (n) => { reviewZoomLevel = n; applyReviewZoom(); },
-  levels: REVIEW_ZOOM_LEVELS,
-});
+// initPinchZoom. Only ever RUNNING while fullscreen is active
+// (started/torn down below), same reasoning as exam.js.
+let reviewPinchZoomHandle = null;
+
+/** Same role as exam.js's updateZoomModeForFullscreen() — see there for the full rationale. */
+function updateZoomModeForFullscreen() {
+  const isFullscreen = !!document.fullscreenElement;
+  if (els.reviewZoomControls) els.reviewZoomControls.hidden = !isFullscreen;
+  if (isFullscreen) {
+    if (!reviewPinchZoomHandle) {
+      reviewPinchZoomHandle = initPinchZoom({
+        getLevel: () => reviewZoomLevel,
+        setLevel: (n) => { reviewZoomLevel = n; applyReviewZoom(); },
+        levels: REVIEW_ZOOM_LEVELS,
+      });
+    }
+  } else {
+    if (reviewPinchZoomHandle) {
+      reviewPinchZoomHandle.teardown();
+      reviewPinchZoomHandle = null;
+    }
+    if (reviewZoomLevel !== 100) {
+      reviewZoomLevel = 100;
+      applyReviewZoom();
+    }
+  }
+}
+document.addEventListener("fullscreenchange", updateZoomModeForFullscreen);
+updateZoomModeForFullscreen();
 
 function renderList() {
   if (!result.answers || result.answers.length === 0) {

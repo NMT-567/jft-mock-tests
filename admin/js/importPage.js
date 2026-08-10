@@ -8,7 +8,7 @@
 import { hidePageLoader, initThemeToggle } from "../../js/utils.js?v=6";
 import { saveDraft, listDrafts } from "./storage.js?v=3";
 import { el, showToast, formatUpdatedAt } from "./components.js?v=3";
-import { buildImportPlan, commitImportPlan, runIntegrityCheck } from "./importAnalyze.js?v=2";
+import { buildImportPlan, commitImportPlan, runIntegrityCheck } from "./importAnalyze.js?v=3";
 import { importDocumentToDraft, importLegacyV1Test } from "./import.js?v=6";
 
 const els = {

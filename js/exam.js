@@ -10,7 +10,7 @@ import { loadTest, findQuestionLocation } from "./loader.js?v=8";
 import { ExamTimer, getTimerState, formatTime } from "./timer.js?v=5";
 import { renderPalette, updatePaletteState, computeSummary, computeGroupCompletion } from "./palette.js?v=3";
 import { bindArrowKeyNavigation, resolveJumpQuestionId, bindSwipeToClose } from "./navigation.js?v=3";
-import { saveSession, loadSession, clearSession, saveResult, startOrResumeAttempt, submitAttemptServerSide } from "./storage.js?v=7";
+import { saveSession, loadSession, clearSession, saveResult, startOrResumeAttempt, startFreshAttempt, submitAttemptServerSide } from "./storage.js?v=8";
 import { requireAuth } from "./auth.js?v=4";
 import { hidePageLoader, initThemeToggle, debounce, initPinchZoom } from "./utils.js?v=6";
 import { buildSharedBlock, buildQuestionBlock } from "./groupRenderer.js?v=8";
@@ -29,6 +29,10 @@ const els = {
   examStartNoticeModal: document.getElementById("examStartNoticeModal"),
   examStartNoticeList: document.getElementById("examStartNoticeList"),
   startExamBtn: document.getElementById("startExamBtn"),
+  resumeChoiceModal: document.getElementById("resumeChoiceModal"),
+  resumeChoiceError: document.getElementById("resumeChoiceError"),
+  resumeChoiceStartFreshBtn: document.getElementById("resumeChoiceStartFreshBtn"),
+  resumeChoiceResumeBtn: document.getElementById("resumeChoiceResumeBtn"),
   securityToastContainer: document.getElementById("securityToastContainer"),
   adminTestModeBanner: document.getElementById("adminTestModeBanner"),
   examProgressText: document.getElementById("examProgressText"),
@@ -89,6 +93,7 @@ const els = {
   zoomOutBtn: document.getElementById("zoomOutBtn"),
   zoomInBtn: document.getElementById("zoomInBtn"),
   zoomLevelText: document.getElementById("zoomLevelText"),
+  examZoomControls: document.getElementById("examZoomControls"),
   devtoolsWarningModal: document.getElementById("devtoolsWarningModal"),
   devtoolsWarningText: document.getElementById("devtoolsWarningText"),
   devtoolsWarningDismissBtn: document.getElementById("devtoolsWarningDismissBtn"),
@@ -187,16 +192,48 @@ async function init() {
     : attemptResumed && existingSession && existingSession.testId === test.id;
 
   if (canResume) {
-    hydrateFromSession(existingSession);
-  } else {
-    clearSession(); // discard any stale/unrelated local session — this is a fresh attempt, always start at question 1
-    state.studentName = previewAsEmail || profile?.display_name || profile?.email || "Admin Preview";
-    state.startedAt = Date.now();
-    state.remainingSeconds = test.noTimeLimit ? Number.MAX_SAFE_INTEGER : test.durationMinutes * 60;
-    state.currentPageIndex = sectionPageRange(0).first;
-    persistSession();
+    // Wait for an explicit choice before touching any state, session, or
+    // exam rendering at all — clicking Question 1 into view and then
+    // silently replacing it with the resumed question is exactly what
+    // this spec asked NOT to do. Either button below is what actually
+    // finishes initialization; nothing here does.
+    els.resumeChoiceResumeBtn.addEventListener("click", () => {
+      els.resumeChoiceModal.close();
+      hydrateFromSession(existingSession);
+      finishInitAndRenderExam(true);
+    });
+    els.resumeChoiceStartFreshBtn.addEventListener("click", () =>
+      handleStartFreshChoice(profile, testId, isAnyAdminPreview, previewAsEmail)
+    );
+    els.resumeChoiceModal.addEventListener("cancel", (e) => e.preventDefault());
+    els.resumeChoiceModal.showModal();
+    hidePageLoader();
+    return;
   }
 
+  clearSession(); // discard any stale/unrelated local session — this is a fresh attempt, always start at question 1
+  state.studentName = previewAsEmail || profile?.display_name || profile?.email || "Admin Preview";
+  state.startedAt = Date.now();
+  state.remainingSeconds = test.noTimeLimit ? Number.MAX_SAFE_INTEGER : test.durationMinutes * 60;
+  state.currentPageIndex = sectionPageRange(0).first;
+  persistSession();
+
+  finishInitAndRenderExam(false);
+}
+
+/**
+ * The one place that actually renders the exam and decides how it
+ * begins — called either immediately (no resumable attempt existed) or
+ * from one of the resume-choice modal's two button handlers. Both paths
+ * funnel through here so there is exactly one render/start sequence,
+ * not two copies that could drift apart.
+ * @param {boolean} isResume - true only when continuing an existing
+ * attempt (via the resume choice, or the pre-existing non-prompted
+ * resume path for e.g. a same-page refresh — see below). Controls
+ * whether the exam-start notice/fullscreen-gate is shown at all, and
+ * whether the timer is (re)started here.
+ */
+function finishInitAndRenderExam(isResume) {
   els.examTestTitle.textContent = test.title;
   renderSectionProgress();
   renderPalette(els.paletteGrid, currentSectionQuestionIndex(), jumpToQuestionId);
@@ -206,20 +243,58 @@ async function init() {
   applyZoom();
   hidePageLoader();
 
-  // A fresh start shows the security notice first — resuming (refresh,
-  // reopening the tab) skips it, since the student already acknowledged
-  // it once for this attempt and re-showing it mid-exam would just be
-  // friction with no informational value. Fullscreen is requested from
-  // inside a direct user-gesture click handler specifically because a
-  // request made outside one is often silently denied by the browser —
-  // see ensureFullscreenBeforeContinuing()/openFullscreenRequirement()
-  // below for the actual gate, which also verifies the request really
+  // A fresh start shows the security notice first — resuming skips it,
+  // since the student already acknowledged it once for this attempt and
+  // re-showing it mid-exam would just be friction with no informational
+  // value. Fullscreen is requested from inside a direct user-gesture
+  // click handler specifically because a request made outside one is
+  // often silently denied by the browser — see
+  // ensureFullscreenBeforeContinuing()/openFullscreenRequirement() below
+  // for the actual gate, which also verifies the request really
   // succeeded rather than assuming it did.
-  if (canResume) {
+  if (isResume) {
     startTimer();
     beginSecuredExam(false);
   } else {
     openExamStartNotice();
+  }
+}
+
+/**
+ * "Start from Beginning" — genuinely starts a new attempt rather than
+ * just resetting local UI state and leaving the old attempt ID/session
+ * attached (which would silently resurface on the next resume check).
+ * See storage.js's startFreshAttempt() doc-comment for why no database
+ * schema/trigger change was needed to make the old attempt stop being
+ * the resume target. Keeps the old (still in_progress, untouched)
+ * attempt fully intact if this fails partway — nothing is torn down
+ * until the new attempt is safely established.
+ */
+async function handleStartFreshChoice(profile, testId, isAnyAdminPreview, previewAsEmail) {
+  els.resumeChoiceStartFreshBtn.disabled = true;
+  els.resumeChoiceResumeBtn.disabled = true;
+  els.resumeChoiceError.hidden = true;
+  try {
+    if (profile) {
+      const attempt = await startFreshAttempt(profile.id, testId, { isAdminPreview: isAnyAdminPreview });
+      if (!attempt.id) throw new Error("startFreshAttempt did not return an attempt id");
+      state.attemptId = attempt.id;
+    }
+    clearSession();
+    state.studentName = previewAsEmail || profile?.display_name || profile?.email || "Admin Preview";
+    state.startedAt = Date.now();
+    state.remainingSeconds = test.noTimeLimit ? Number.MAX_SAFE_INTEGER : test.durationMinutes * 60;
+    state.currentPageIndex = sectionPageRange(0).first;
+    persistSession();
+    els.resumeChoiceModal.close();
+    finishInitAndRenderExam(false);
+  } catch (err) {
+    // Keep the old attempt/modal exactly as they were — never leave the
+    // student stuck between two half-created states.
+    console.error("exam.handleStartFreshChoice failed — the existing unfinished attempt is untouched", err);
+    els.resumeChoiceError.hidden = false;
+    els.resumeChoiceStartFreshBtn.disabled = false;
+    els.resumeChoiceResumeBtn.disabled = false;
   }
 }
 
@@ -985,11 +1060,21 @@ function toggleFullscreen() {
 }
 
 /* =========================================================
-   ZOOM — application-level, independent of browser/native zoom
-   (which behaves inconsistently once fullscreen is active). A
-   simple in-memory value for the current exam session only, per
-   spec preference — resets to 100% on a fresh page load/session,
-   same as the rest of this app's non-persisted UI state.
+   ZOOM — adaptive: native browser pinch/page zoom is used
+   whenever the exam is NOT in Fullscreen API fullscreen (the
+   viewport meta already permits it — see exam.html — so nothing
+   extra is needed for that case). The application-level CSS-zoom
+   system below is used ONLY while fullscreen IS active, because
+   Android Chrome/Firefox/Edge ignore the viewport meta's zoom
+   settings entirely for the duration of Fullscreen API fullscreen
+   — a real, still-current platform limitation (confirmed again
+   this session), not something fixable via meta/CSS/JS alone —
+   so native zoom would otherwise be completely unavailable for
+   the entire exam. A simple in-memory value for the current exam
+   session only, per spec preference — resets to 100% on a fresh
+   page load/session AND every time fullscreen exits (see
+   updateZoomModeForFullscreen below), same as the rest of this
+   app's non-persisted UI state.
    ========================================================= */
 const ZOOM_LEVELS = [80, 90, 100, 110, 120, 130, 140, 150];
 let zoomLevel = 100;
@@ -1016,14 +1101,51 @@ function zoomIn() {
 }
 
 // Two-finger pinch drives the exact same zoomLevel/applyZoom() the
-// +/- buttons use — see utils.js's initPinchZoom for why this exists
-// as a separate gesture implementation rather than relying on the
-// browser's own native pinch-zoom.
-initPinchZoom({
-  getLevel: () => zoomLevel,
-  setLevel: (n) => { zoomLevel = n; applyZoom(); },
-  levels: ZOOM_LEVELS,
-});
+// +/- buttons use — see utils.js's initPinchZoom. Only ever RUNNING
+// while fullscreen is active (started/torn down below) — outside
+// fullscreen its non-passive touchmove listener would itself be the
+// thing blocking the browser's own native pinch gesture, which is
+// exactly what this adaptive behavior is meant to avoid.
+let pinchZoomHandle = null;
+
+/**
+ * The single source of truth for which zoom mode is active. Called
+ * once immediately (so a test that never requires fullscreen at all
+ * starts, and stays, in native mode with zero flicker) and again on
+ * every native `fullscreenchange` event. Deliberately does NOT try to
+ * guess fullscreen state from screen size/orientation — only the
+ * browser's own document.fullscreenElement is treated as ground truth,
+ * per this session's spec.
+ */
+function updateZoomModeForFullscreen() {
+  const isFullscreen = !!document.fullscreenElement;
+  if (els.examZoomControls) els.examZoomControls.hidden = !isFullscreen;
+  if (isFullscreen) {
+    if (!pinchZoomHandle) {
+      pinchZoomHandle = initPinchZoom({
+        getLevel: () => zoomLevel,
+        setLevel: (n) => { zoomLevel = n; applyZoom(); },
+        levels: ZOOM_LEVELS,
+      });
+    }
+  } else {
+    if (pinchZoomHandle) {
+      pinchZoomHandle.teardown();
+      pinchZoomHandle = null;
+    }
+    // Leaving fullscreen (or never having entered it) always returns
+    // to a clean 100% — never leave the custom scale applied once
+    // native browser zoom is what the person is actually using, per
+    // this session's explicit "do not leave the custom scale applied
+    // after fullscreen exits" requirement.
+    if (zoomLevel !== 100) {
+      zoomLevel = 100;
+      applyZoom();
+    }
+  }
+}
+document.addEventListener("fullscreenchange", updateZoomModeForFullscreen);
+updateZoomModeForFullscreen();
 
 /* =========================================================
    SECURITY WIRING (see security.js for what is/isn't enforceable)

@@ -102,6 +102,16 @@ export function clearResult() {
  * resumed, so re-opening the same link always starts at question 1
  * unless there's a real still-open attempt on the server to match.
  */
+async function insertNewAttemptRow(userId, testId, isAdminPreview) {
+  const { data, error } = await supabase
+    .from("test_attempts")
+    .insert({ user_id: userId, test_id: testId, is_admin_preview: isAdminPreview })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id;
+}
+
 export async function startOrResumeAttempt(userId, testId, { isAdminPreview = false } = {}) {
   try {
     const { data: existing } = await supabase
@@ -115,15 +125,34 @@ export async function startOrResumeAttempt(userId, testId, { isAdminPreview = fa
       .maybeSingle();
     if (existing) return { id: existing.id, resumed: true };
 
-    const { data, error } = await supabase
-      .from("test_attempts")
-      .insert({ user_id: userId, test_id: testId, is_admin_preview: isAdminPreview })
-      .select("id")
-      .single();
-    if (error) throw error;
-    return { id: data.id, resumed: false };
+    const id = await insertNewAttemptRow(userId, testId, isAdminPreview);
+    return { id, resumed: false };
   } catch (err) {
     console.error("storage.startOrResumeAttempt failed (continuing without a remote attempt row)", err);
+    return { id: null, resumed: false };
+  }
+}
+
+/**
+ * Always creates a brand-new in_progress attempt row, even when an
+ * existing one is still open — used specifically when the student
+ * explicitly chooses "Start from Beginning" over an already-resumable
+ * attempt (see exam.js's resume-choice modal). Deliberately does NOT
+ * touch the old row's status: migration 0002's protect_attempt_scoring
+ * trigger silently pins status back to its previous value on any
+ * non-service-role UPDATE, so a direct client-side "mark abandoned"
+ * isn't possible without a schema/trigger change — and doesn't need to
+ * be. startOrResumeAttempt()'s own lookup above always picks the most
+ * recently started in_progress row, so once this new row exists the
+ * old one simply stops being the resume target on any future page
+ * load; nothing else needs to change for that invariant to hold.
+ */
+export async function startFreshAttempt(userId, testId, { isAdminPreview = false } = {}) {
+  try {
+    const id = await insertNewAttemptRow(userId, testId, isAdminPreview);
+    return { id, resumed: false };
+  } catch (err) {
+    console.error("storage.startFreshAttempt failed", err);
     return { id: null, resumed: false };
   }
 }

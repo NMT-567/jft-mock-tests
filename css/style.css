@@ -398,19 +398,34 @@ html[data-theme="dark"] .icon-moon { display: none; }
      screen — so "Nihongo Mock Test" appears many times over, exactly
      as asked, with no JavaScript needed for the pattern itself. */
   background-repeat: repeat;
-  background-size: 420px 260px;
+  /* Scales with the SAME --exam-zoom the question/review/result content
+     uses (see css/exam.css) — driven to a real value only while the
+     custom fullscreen zoom is active (see js/exam.js and friends'
+     updateZoomModeForFullscreen()); it's reset to 1 the instant
+     fullscreen exits, at which point the browser's own native page zoom
+     takes over and scales this fixed-position element together with
+     everything else automatically, with no help needed from this rule.
+     Without this, the watermark's tile stayed a constant real-pixel
+     size while the zoomed content behind it grew, which is what made it
+     look "detached" from the content at high zoom levels. */
+  background-size: calc(420px * var(--exam-zoom)) calc(260px * var(--exam-zoom));
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='260'%3E%3Ctext x='40' y='110' transform='rotate(-25 40 110)' font-family='Arial, Helvetica, sans-serif' font-size='18' font-weight='700' fill='%23888888'%3ENihongo Mock Test%3C/text%3E%3Ctext x='40' y='220' transform='rotate(-25 40 220)' font-family='Arial, Helvetica, sans-serif' font-size='18' font-weight='700' fill='%23888888'%3ENihongo Mock Test%3C/text%3E%3C/svg%3E");
   /* "Changeable most slowly" — a single background-position animation
      panning by exactly one tile's width/height over a very long
      duration (6 minutes). Because the pan distance matches the tile
      size exactly, the loop point is seamless — no visible jump/reset,
-     just a continuous, barely-perceptible drift of the whole pattern. */
+     just a continuous, barely-perceptible drift of the whole pattern.
+     The pan distance is scaled by the same --exam-zoom as the tile size
+     above so the loop stays exactly one-tile-width at any zoom level —
+     a mismatch here (e.g. leaving this at a fixed 420px/260px while the
+     tile itself scales) would reintroduce a visible seam at the loop
+     point whenever zoom isn't 100%. */
   animation: watermark-slow-pan 360s linear infinite;
 }
 
 @keyframes watermark-slow-pan {
   0% { background-position: 0 0; }
-  100% { background-position: 420px 260px; }
+  100% { background-position: calc(420px * var(--exam-zoom)) calc(260px * var(--exam-zoom)); }
 }
 
 @media (prefers-reduced-motion: reduce) {

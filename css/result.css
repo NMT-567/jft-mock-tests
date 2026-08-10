@@ -1,6 +1,72 @@
 .result-main { padding: 32px 20px 60px; max-width: 760px; }
 .result-zoom-content { zoom: var(--exam-zoom); }
 
+/* Old bilingual header/label rows kept in the DOM (still populated by
+   result.js exactly as before) but visually hidden — the reference
+   design this redesign targets doesn't show them, and this is a pure
+   CSS display toggle, not a removal of the underlying rendering. */
+.jft-lang-block { display: none; }
+
+/* =========================================================
+   RESULT PAGE HEADER — back button + dynamic title/meta
+   ========================================================= */
+.result-page-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.result-page-header-text { flex: 1; text-align: center; padding-top: 6px; }
+.result-page-header-text h1 { font-size: 1.35rem; margin: 0 0 4px; }
+.result-page-header-text p { font-size: 0.82rem; color: var(--color-text-muted); margin: 0; }
+
+/* =========================================================
+   MOTIVATIONAL CARD — dynamic tier sets one of these 3 classes
+   ========================================================= */
+.result-motivation-card {
+  text-align: center;
+  border-radius: var(--radius-lg);
+  padding: 28px 24px;
+  margin-bottom: 20px;
+}
+.result-motivation-card.tier-high { background: #dcfce7; }
+.result-motivation-card.tier-mid { background: #fef3c7; }
+.result-motivation-card.tier-low { background: #fef3c7; }
+html[data-theme="dark"] .result-motivation-card.tier-high { background: #14301f; }
+html[data-theme="dark"] .result-motivation-card.tier-mid,
+html[data-theme="dark"] .result-motivation-card.tier-low { background: #3a2e10; }
+.result-motivation-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+}
+.result-motivation-card h2 {
+  margin: 0 0 10px;
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+.result-motivation-card.tier-high h2, .result-motivation-card.tier-high p { color: #166534; }
+.result-motivation-card.tier-mid h2, .result-motivation-card.tier-mid p,
+.result-motivation-card.tier-low h2, .result-motivation-card.tier-low p { color: #92400e; }
+html[data-theme="dark"] .result-motivation-card.tier-high h2, html[data-theme="dark"] .result-motivation-card.tier-high p { color: #86efac; }
+html[data-theme="dark"] .result-motivation-card.tier-mid h2, html[data-theme="dark"] .result-motivation-card.tier-mid p,
+html[data-theme="dark"] .result-motivation-card.tier-low h2, html[data-theme="dark"] .result-motivation-card.tier-low p { color: #fcd34d; }
+.result-motivation-card p { margin: 0; font-size: 0.95rem; font-weight: 600; }
+
+.result-test-title-subtle {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin: 0 0 20px;
+}
+
 /* =========================================================
    JFT RESULT INTRO
    ========================================================= */
@@ -19,14 +85,10 @@
   border: 1.5px solid var(--color-border);
 }
 .jft-score-panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
   text-align: left;
-  gap: 16px;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
+  margin-bottom: 14px;
 }
+.jft-score-range-title { font-size: 1.1rem; margin: 0; }
 .jft-score-label, .jft-score-range-label { display: flex; flex-direction: column; gap: 2px; }
 .jft-score-range-label { text-align: right; }
 .jft-score-label-ja { font-weight: 700; font-size: 0.95rem; }
@@ -41,28 +103,13 @@
   position: relative;
   height: 10px;
   border-radius: 999px;
-  background: var(--color-gray-light);
+  /* Fixed orange->yellow->green performance gradient — same 3 colors
+     regardless of light/dark theme, same reasoning as a traffic-light
+     indicator: this is a semantic scale, not a surface color. */
+  background: linear-gradient(90deg, #f59e0b, #eab308, #22c55e);
   overflow: visible;
 }
-.score-range-fail-zone {
-  position: absolute;
-  top: 0; left: 0; height: 100%;
-  background: var(--color-warning);
-  border-radius: 999px 0 0 999px;
-  opacity: 0.55;
-  width: 0;
-  transition: width 0.8s ease;
-}
-.score-range-pass-zone {
-  position: absolute;
-  top: 0; height: 100%;
-  background: var(--color-success);
-  border-radius: 0 999px 999px 0;
-  opacity: 0.35;
-  width: 0;
-  left: 0;
-  transition: width 0.8s ease, left 0.8s ease;
-}
+.score-range-fail-zone, .score-range-pass-zone { display: none; }
 .score-range-passing-marker {
   position: absolute;
   top: -6px;
@@ -70,7 +117,7 @@
   transform: translateX(-50%);
   transition: left 0.8s ease;
 }
-.score-range-passing-line { display: block; width: 2px; height: 22px; background: var(--color-text); }
+.score-range-passing-line { display: block; width: 2px; height: 22px; background: var(--color-text); opacity: 0.5; }
 .score-range-student-marker {
   position: absolute;
   top: -14px;
@@ -86,12 +133,18 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: var(--color-warning);
+  background: var(--color-primary);
   border: 3px solid var(--color-surface);
-  box-shadow: 0 0 0 1.5px var(--color-warning);
+  box-shadow: 0 0 0 1.5px var(--color-primary);
 }
-.score-range-student-marker.pass .score-range-marker-dot { background: var(--color-success); box-shadow: 0 0 0 1.5px var(--color-success); }
-.score-range-marker-value { font-weight: 800; font-size: 0.9rem; }
+.score-range-marker-value {
+  font-weight: 800;
+  font-size: 0.85rem;
+  background: var(--color-primary);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
 
 .score-range-labels {
   position: relative;
@@ -101,57 +154,71 @@
   font-size: 0.78rem;
   color: var(--color-text-muted);
 }
-.score-range-passing-label { font-weight: 600; color: var(--color-text); }
+.score-range-passing-label {
+  font-weight: 700;
+  color: var(--color-primary-dark);
+  background: var(--color-primary-light);
+  padding: 3px 10px;
+  border-radius: 999px;
+}
 
 .jft-pass-fail-badge {
   display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
-  padding: 8px 28px;
-  border-radius: var(--radius-md);
+  padding: 6px 18px;
+  border-radius: 999px;
   font-weight: 800;
-  margin: 4px 0 18px;
-  border: 1.5px solid var(--color-border);
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
+  margin: 0 0 14px;
 }
-.jft-pass-fail-badge.pass { background: var(--color-success-light); color: var(--color-success); border-color: var(--color-success); }
-.jft-pass-fail-badge.fail { background: var(--color-warning-light); color: var(--color-warning); border-color: var(--color-warning); }
-.jft-pass-fail-ja { font-size: 1.1rem; display: block; }
-.jft-pass-fail-en { font-size: 0.75rem; letter-spacing: 0.05em; display: block; }
+.jft-pass-fail-badge.pass { background: var(--color-success-light); color: var(--color-success); }
+.jft-pass-fail-badge.fail { background: var(--color-warning-light); color: var(--color-warning); }
+.jft-pass-fail-ja { display: none; }
+.jft-pass-fail-en { font-size: 0.8rem; letter-spacing: 0.05em; }
 
-.jft-result-message-ja { margin: 0 0 4px; font-size: 0.98rem; }
 .jft-result-message-en { margin: 0; color: var(--color-text-muted); font-size: 0.88rem; }
 
 /* =========================================================
    SECTION-BY-SECTION RESULTS
    ========================================================= */
 .jft-section-results { padding: 24px; }
-.jft-section-results-title-ja { margin: 0 0 2px; font-size: 1.05rem; }
-.jft-section-results-title-en { margin: 0 0 20px; color: var(--color-text-muted); font-size: 0.85rem; }
+.jft-section-results-title-en-main { margin: 0 0 20px; font-size: 1.1rem; }
 
 .section-result-item { margin-bottom: 20px; }
 .section-result-item:last-child { margin-bottom: 0; }
 .section-result-header { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
 .section-result-name { display: flex; flex-direction: column; }
-.section-result-name-ja { font-weight: 700; font-size: 0.92rem; }
-.section-result-name-en { font-size: 0.78rem; color: var(--color-text-muted); }
-.section-result-percentage { font-weight: 800; font-size: 1.1rem; flex-shrink: 0; }
+.section-result-name-ja { display: none; }
+.section-result-name-en { font-weight: 700; font-size: 0.92rem; color: var(--color-text); }
+.section-result-percentage { font-weight: 800; font-size: 1.05rem; flex-shrink: 0; }
 
-.section-result-bar-track { position: relative; height: 8px; border-radius: 999px; background: var(--color-gray-light); }
-.section-result-bar-fill { position: absolute; top: 0; left: 0; height: 100%; width: 0; background: var(--color-primary); border-radius: 999px; transition: width 0.8s ease; }
-.section-result-bar-dot {
+.section-result-bar-track { position: relative; height: 10px; border-radius: 999px; background: var(--color-gray-light); overflow: hidden; }
+.section-result-bar-fill {
   position: absolute;
-  top: 50%;
-  left: 0;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  border: 2px solid var(--color-surface);
-  transform: translate(-50%, -50%);
-  transition: left 0.8s ease;
+  top: 0; left: 0; height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #f59e0b, #eab308, #22c55e);
+  border-radius: 999px;
+  transition: width 0.8s ease;
 }
+.section-result-bar-dot { display: none; }
 .section-result-detail { margin: 8px 0 0; font-size: 0.78rem; color: var(--color-text-muted); }
+
+/* =========================================================
+   ADDITIONAL RESULT INFORMATION
+   ========================================================= */
+.result-extra-info { padding: 24px; margin-top: 20px; }
+.result-extra-info h2 { margin: 0 0 16px; font-size: 1.1rem; }
+.result-extra-info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.9rem;
+}
+.result-extra-info-row:last-child { border-bottom: none; }
+.result-extra-info-row span:first-child { color: var(--color-text-muted); }
+.result-extra-info-row span:last-child { font-weight: 700; }
 
 .result-actions { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
 .result-actions .btn { width: 100%; }
@@ -180,8 +247,6 @@
    RESPONSIVE
    ========================================================= */
 @media (max-width: 600px) {
-  .jft-score-panel-header { flex-direction: column; }
-  .jft-score-range-label { text-align: left; }
   .jft-score-big { font-size: 2rem; }
   .score-range-bar { max-width: 100%; }
 }

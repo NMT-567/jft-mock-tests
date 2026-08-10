@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
 <title>Result | NMT CBT</title>
 <link rel="icon" href="assets/icons/logo.svg" type="image/svg+xml" />
-<link rel="stylesheet" href="css/style.css?v=8" />
-<link rel="stylesheet" href="css/exam.css?v=16" />
+<link rel="stylesheet" href="css/style.css?v=9" />
+<link rel="stylesheet" href="css/exam.css?v=17" />
 <link rel="stylesheet" href="css/result.css?v=7" />
 <link rel="stylesheet" href="css/responsive.css?v=6" />
 </head>
@@ -35,8 +35,8 @@
   </header>
 
   <main class="container result-main security-protected-content">
-    <!-- ZOOM CONTROLS — same application-level zoom system as exam.html/review.html (reuses the shared .exam-zoom-controls/.zoom-btn CSS from css/exam.css, already loaded on this page for the fullscreen modal, and the same --exam-zoom custom property). -->
-    <div class="exam-zoom-controls no-print">
+    <!-- ZOOM CONTROLS — same application-level zoom system as exam.html/review.html (reuses the shared .exam-zoom-controls/.zoom-btn CSS from css/exam.css, already loaded on this page for the fullscreen modal, and the same --exam-zoom custom property). Only shown/active while in Fullscreen API fullscreen — see js/result.js's updateZoomModeForFullscreen(). -->
+    <div class="exam-zoom-controls no-print" id="resultZoomControls" hidden>
       <button type="button" class="zoom-btn" id="resultZoomOutBtn" aria-label="Zoom out">−</button>
       <span class="zoom-level" id="resultZoomLevelText" aria-live="polite">100%</span>
       <button type="button" class="zoom-btn" id="resultZoomInBtn" aria-label="Zoom in">+</button>
@@ -147,6 +147,6 @@
     <p>&copy; <span id="year"></span> Nihongo Mock Test.</p>
   </footer>
 
-  <script type="module" src="js/result.js?v=13"></script>
+  <script type="module" src="js/result.js?v=14"></script>
 </body>
 </html>

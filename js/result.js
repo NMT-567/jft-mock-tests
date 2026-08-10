@@ -7,7 +7,7 @@
  * this file only renders them, it never recalculates scoring itself, so
  * there's exactly one place the scoring logic lives.
  */
-import { loadResult } from "./storage.js?v=7";
+import { loadResult } from "./storage.js?v=8";
 import { supabase } from "./supabaseClient.js?v=1";
 import { requireAuth } from "./auth.js?v=4";
 import { hidePageLoader, initThemeToggle, stampYear, getQueryParam, initPinchZoom } from "./utils.js?v=6";
@@ -42,6 +42,16 @@ const els = {
   resultZoomOutBtn: document.getElementById("resultZoomOutBtn"),
   resultZoomInBtn: document.getElementById("resultZoomInBtn"),
   resultZoomLevelText: document.getElementById("resultZoomLevelText"),
+  resultZoomControls: document.getElementById("resultZoomControls"),
+  resultBackBtn: document.getElementById("resultBackBtn"),
+  resultHeaderTitle: document.getElementById("resultHeaderTitle"),
+  resultHeaderMeta: document.getElementById("resultHeaderMeta"),
+  resultMotivationCard: document.getElementById("resultMotivationCard"),
+  resultMotivationTitle: document.getElementById("resultMotivationTitle"),
+  resultMotivationBody: document.getElementById("resultMotivationBody"),
+  resultTestTitleSubtle: document.getElementById("resultTestTitleSubtle"),
+  resultExtraInfo: document.getElementById("resultExtraInfo"),
+  resultExtraInfoList: document.getElementById("resultExtraInfoList"),
 };
 
 let resultFullscreenGuard = null;
@@ -83,12 +93,14 @@ async function init() {
   const result = attemptId ? await loadResultFromAttempt(attemptId) : loadResult();
   if (!result) {
     els.resultTestMeta.textContent = "No completed attempt found.";
+    els.resultHeaderTitle.textContent = "Result";
+    els.resultHeaderMeta.textContent = "No completed attempt found.";
     els.reviewAnswersBtn.disabled = true;
     hidePageLoader();
     return;
   }
 
-  render(result);
+  await render(result);
   bindEvents();
   if (els.resultMain) initContentProtection(els.resultMain);
   applyZoom();
@@ -105,7 +117,7 @@ async function loadResultFromAttempt(attemptId) {
   return data.result;
 }
 
-function render(result) {
+async function render(result) {
   // Older attempts saved before this feature shipped won't have
   // finalScore/sections/resultSettings — fall back to the raw fields that
   // have always existed so a pre-existing completed attempt still renders
@@ -118,20 +130,131 @@ function render(result) {
   els.resultTitleEn.textContent = rs.titleEn || FALLBACK_RESULT_SETTINGS.titleEn;
   els.resultTestMeta.textContent = `${result.studentName} · ${result.testTitle}`;
 
+  await renderHeader(result);
+  renderMotivation(result, rs, finalScore);
   renderScorePanel(result, rs, finalScore);
   renderSectionResults(sections, rs);
+  renderExtraInfo(result);
+}
+
+/** Header title/meta line: "[Test] Result" + "Mock Test Completed · [date] · Attempt [N]".
+ * Attempt number is a REAL count from test_attempts (RLS already lets a
+ * user read their own rows), never fabricated — if it can't be
+ * determined (admin preview, no testId, or the query fails) it's
+ * simply omitted from the line rather than guessed. */
+async function renderHeader(result) {
+  els.resultHeaderTitle.textContent = result.testTitle ? `${result.testTitle} Result` : "Result";
+  els.resultTestTitleSubtle.textContent = result.testTitle || "";
+
+  const parts = ["Mock Test Completed"];
+  const dateStr = formatResultDate(result.submittedAt);
+  if (dateStr) parts.push(dateStr);
+
+  const attemptNumber = await computeAttemptNumber(result);
+  if (attemptNumber) parts.push(`Attempt ${attemptNumber}`);
+
+  els.resultHeaderMeta.textContent = parts.join(" · ");
+}
+
+function formatResultDate(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const now = new Date();
+  const isToday = d.toDateString() === now.toDateString();
+  const time = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  if (isToday) return `Today, ${time}`;
+  return `${d.toLocaleDateString(undefined, { month: "short", day: "numeric" })}, ${time}`;
+}
+
+/** Real count of this student's submitted attempts on this test, up to
+ * and including this one — not fabricated, and gracefully omitted
+ * (returns null) rather than guessed if it can't be determined. */
+async function computeAttemptNumber(result) {
+  if (!result?.testId || !result?.submittedAt) return null;
+  try {
+    const { count, error } = await supabase
+      .from("test_attempts")
+      .select("id", { count: "exact", head: true })
+      .eq("test_id", result.testId)
+      .eq("status", "submitted")
+      .lte("submitted_at", result.submittedAt);
+    if (error || count == null) return null;
+    return count;
+  } catch {
+    return null;
+  }
+}
+
+/** Dynamic tier message — percentage-based, never affects scoring (this
+ * only reads result.percentage, computed elsewhere; it's never written
+ * back to). Falls back to computing a percentage from finalScore/min/max
+ * if result.percentage itself is missing (older attempts). */
+function renderMotivation(result, rs, finalScore) {
+  let pct = typeof result.percentage === "number" && Number.isFinite(result.percentage) ? result.percentage : null;
+  if (pct === null) {
+    const min = typeof rs.minScore === "number" ? rs.minScore : FALLBACK_RESULT_SETTINGS.minScore;
+    const max = typeof rs.maxScore === "number" ? rs.maxScore : FALLBACK_RESULT_SETTINGS.maxScore;
+    pct = max > min && Number.isFinite(finalScore) ? ((finalScore - min) / (max - min)) * 100 : 0;
+  }
+
+  let tier, title, body;
+  if (pct >= 70) {
+    tier = "tier-high";
+    title = "Excellent Work!";
+    body = "Great job! Keep building your Japanese skills.";
+  } else if (pct >= 40) {
+    tier = "tier-mid";
+    title = "Good Effort!";
+    body = "Keep practicing and you'll get even stronger.";
+  } else {
+    tier = "tier-low";
+    title = "Don't Give Up!";
+    body = "Every practice makes you stronger. Practice again.";
+  }
+
+  els.resultMotivationCard.classList.remove("tier-high", "tier-mid", "tier-low");
+  els.resultMotivationCard.classList.add(tier);
+  els.resultMotivationTitle.textContent = title;
+  els.resultMotivationBody.textContent = body;
+}
+
+/** Additional Result Information — only ever reads fields already on the
+ * real result object; any genuinely-missing field is simply left out of
+ * the list rather than shown as 0/NaN/undefined. */
+function renderExtraInfo(result) {
+  const rows = [
+    ["Correct", result.correct],
+    ["Wrong", result.wrong],
+    ["Skipped", result.skipped],
+    ["Total Questions", result.totalQuestions],
+  ].filter(([, value]) => typeof value === "number" && Number.isFinite(value));
+
+  if (rows.length === 0) {
+    els.resultExtraInfo.hidden = true;
+    return;
+  }
+  els.resultExtraInfo.hidden = false;
+  els.resultExtraInfoList.innerHTML = rows
+    .map(([label, value]) => `<div class="result-extra-info-row"><span>${escapeHtml(label)}</span><span>${value}</span></div>`)
+    .join("");
 }
 
 function renderScorePanel(result, rs, finalScore) {
   const min = typeof rs.minScore === "number" ? rs.minScore : FALLBACK_RESULT_SETTINGS.minScore;
   const max = typeof rs.maxScore === "number" ? rs.maxScore : FALLBACK_RESULT_SETTINGS.maxScore;
-  const passingScore = typeof rs.passingScore === "number" ? rs.passingScore : FALLBACK_RESULT_SETTINGS.passingScore;
+  const hasPassingScore = typeof rs.passingScore === "number" && Number.isFinite(rs.passingScore);
+  const passingScore = hasPassingScore ? rs.passingScore : FALLBACK_RESULT_SETTINGS.passingScore;
 
   els.scoreRangeValue.textContent = `${min} – ${max} points`;
   els.jftScoreBig.innerHTML = `${finalScore} <span class="jft-score-unit">points</span>`;
   els.scoreRangeMinLabel.textContent = String(min);
   els.scoreRangeMaxLabel.textContent = String(max);
-  els.scorePassingLabel.textContent = `Passing Score: ${passingScore}`;
+  els.scorePassingLabel.textContent = hasPassingScore ? `Passing Score: ${passingScore}` : "";
+  // Gracefully omit the passing-score indicator entirely if this test
+  // genuinely has none configured, rather than inventing a position for it.
+  els.scorePassingMarker.style.display = hasPassingScore ? "" : "none";
+  els.scorePassingLabel.style.display = hasPassingScore ? "" : "none";
 
   const span = max - min;
   const clampPct = (v) => (span > 0 ? Math.min(100, Math.max(0, ((v - min) / span) * 100)) : 0);
@@ -201,6 +324,9 @@ function escapeHtml(str) {
 }
 
 function bindEvents() {
+  els.resultBackBtn.addEventListener("click", () => {
+    window.location.href = "index.html";
+  });
   els.reviewAnswersBtn.addEventListener("click", () => {
     // Carry the same query params through so review.html can load the
     // same attempt (?attemptId=...) and skip the auth gate the same way
@@ -216,13 +342,16 @@ function bindEvents() {
 }
 
 /* =========================================================
-   ZOOM — same application-level system as exam.js/review.js,
-   scoped to #resultZoomContent only (css/result.css) via the
-   shared --exam-zoom custom property (css/exam.css, already
-   loaded on this page for the fullscreen modal). Previously
-   missing entirely here — the doc that flagged this explicitly
-   noted result.html had no existing zoom infrastructure to hook
-   a pinch gesture into, unlike exam/review which already did.
+   ZOOM — adaptive, same approach as exam.js/review.js: native
+   browser pinch/page zoom is used whenever this page is NOT in
+   Fullscreen API fullscreen (the viewport meta already permits it
+   — see result.html). The application-level CSS-zoom system below
+   (via the shared --exam-zoom custom property, scoped to
+   #resultZoomContent in css/result.css) is used ONLY while
+   fullscreen IS active, because Android Chrome/Firefox/Edge ignore
+   the viewport meta's zoom settings entirely for the duration of
+   Fullscreen API fullscreen — a real, still-current platform
+   limitation, not something fixable via meta/CSS/JS alone.
    ========================================================= */
 const ZOOM_LEVELS = [80, 90, 100, 110, 120, 130, 140, 150];
 let zoomLevel = 100;
@@ -249,14 +378,36 @@ function zoomIn() {
 }
 
 // Two-finger pinch drives the exact same zoomLevel/applyZoom() the
-// +/- buttons use — see utils.js's initPinchZoom for why this exists
-// (native pinch is blocked by the Fullscreen API on most mobile
-// browsers, regardless of viewport meta settings).
-initPinchZoom({
-  getLevel: () => zoomLevel,
-  setLevel: (n) => { zoomLevel = n; applyZoom(); },
-  levels: ZOOM_LEVELS,
-});
+// +/- buttons use — see utils.js's initPinchZoom. Only ever RUNNING
+// while fullscreen is active (started/torn down below), same
+// reasoning as exam.js/review.js.
+let resultPinchZoomHandle = null;
+
+/** Same role as exam.js's updateZoomModeForFullscreen() — see there for the full rationale. */
+function updateZoomModeForFullscreen() {
+  const isFullscreen = !!document.fullscreenElement;
+  if (els.resultZoomControls) els.resultZoomControls.hidden = !isFullscreen;
+  if (isFullscreen) {
+    if (!resultPinchZoomHandle) {
+      resultPinchZoomHandle = initPinchZoom({
+        getLevel: () => zoomLevel,
+        setLevel: (n) => { zoomLevel = n; applyZoom(); },
+        levels: ZOOM_LEVELS,
+      });
+    }
+  } else {
+    if (resultPinchZoomHandle) {
+      resultPinchZoomHandle.teardown();
+      resultPinchZoomHandle = null;
+    }
+    if (zoomLevel !== 100) {
+      zoomLevel = 100;
+      applyZoom();
+    }
+  }
+}
+document.addEventListener("fullscreenchange", updateZoomModeForFullscreen);
+updateZoomModeForFullscreen();
 
 /* =========================================================
    FULLSCREEN REQUIREMENT — same reused pattern as exam.js's

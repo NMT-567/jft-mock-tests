@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
 <title>Review Answers | NMT CBT</title>
 <link rel="icon" href="assets/icons/logo.svg" type="image/svg+xml" />
-<link rel="stylesheet" href="css/style.css?v=8" />
-<link rel="stylesheet" href="css/exam.css?v=15" />
+<link rel="stylesheet" href="css/style.css?v=9" />
+<link rel="stylesheet" href="css/exam.css?v=17" />
 <link rel="stylesheet" href="css/review.css?v=7" />
 <link rel="stylesheet" href="css/responsive.css?v=6" />
 </head>
@@ -37,8 +37,11 @@
     </div>
   </header>
 
-  <!-- ZOOM CONTROLS — same application-level zoom system as exam.html (reuses the shared .exam-zoom-controls/.zoom-btn CSS from css/exam.css and the same --exam-zoom custom property). -->
-  <div class="exam-zoom-controls no-print">
+  <!-- ZOOM CONTROLS — same application-level zoom system as exam.html (reuses
+       the shared .exam-zoom-controls/.zoom-btn CSS from css/exam.css and the
+       same --exam-zoom custom property). Only shown/active while in Fullscreen
+       API fullscreen — see js/review.js's updateZoomModeForFullscreen(). -->
+  <div class="exam-zoom-controls no-print" id="reviewZoomControls" hidden>
     <button type="button" class="zoom-btn" id="reviewZoomOutBtn" aria-label="Zoom out">−</button>
     <span class="zoom-level" id="reviewZoomLevelText" aria-live="polite">100%</span>
     <button type="button" class="zoom-btn" id="reviewZoomInBtn" aria-label="Zoom in">+</button>
@@ -63,6 +66,6 @@
     </div>
   </dialog>
 
-  <script type="module" src="js/review.js?v=13"></script>
+  <script type="module" src="js/review.js?v=15"></script>
 </body>
 </html>
