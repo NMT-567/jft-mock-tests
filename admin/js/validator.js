@@ -104,7 +104,19 @@ function validateGroup(group, section, errors) {
     errors.push({ ...loc, field: "imageUrl", message: `${label}: an image is required.` });
   }
 
-  const minQuestions = group.type === "single" ? 1 : 2;
+  // Was `group.type === "single" ? 1 : 2` — a real, legitimate case
+  // surfaced this as too strict: a passage/listening/image group can
+  // genuinely have just 1 real question while still needing its OWN
+  // group-level shared media distinct from that question's own image
+  // (e.g. a shared passage graphic PLUS a separate per-question
+  // illustration) — something "single" type cannot represent at all,
+  // since single collapses group+question into one entity with only
+  // one image slot (see groupRenderer.js's ownImageUrl comment). Forcing
+  // that case into "single" to satisfy a ">=2" floor would silently
+  // drop one of the two images. 1 is a safe floor for every group type:
+  // a group with 0 questions was never a meaningful group in the first
+  // place regardless of type, so this doesn't weaken that check at all.
+  const minQuestions = 1;
   if (!group.questions || group.questions.length < minQuestions) {
     errors.push({ ...loc, field: "questions", message: `${label}: needs at least ${minQuestions} question${minQuestions === 1 ? "" : "s"}.` });
   }
