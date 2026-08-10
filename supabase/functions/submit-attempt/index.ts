@@ -96,6 +96,23 @@ Deno.serve(async (req) => {
     if (attempt.user_id !== callerId) return json({ error: "This attempt does not belong to you" }, 403);
     if (attempt.status !== "in_progress") return json({ error: "This attempt was already submitted" }, 409);
 
+    // Re-check access RIGHT NOW, server-side, even though this attempt
+    // was legitimately created earlier while access was valid — this is
+    // exactly the "already-open tab" case the access-expiration spec
+    // calls out: a browser tab that loaded the exam before expiration/
+    // disable has no reason to make another authorization-checked
+    // request before hitting Submit, so without this the only other
+    // access check (get_exam_content, at load time) could be stale by
+    // the time this fires. Skipped for admin-preview rows, same as
+    // every other access check in this project — an admin previewing
+    // their own draft was never subject to has_test_access() anyway.
+    if (!attempt.is_admin_preview) {
+      const { data: stillAuthorized } = await admin.rpc("has_test_access", { uid: callerId, tid: attempt.test_id });
+      if (!stillAuthorized) {
+        return json({ error: "Your access has expired or been disabled — this attempt could not be submitted. Please contact your administrator." }, 403);
+      }
+    }
+
     const { data: test, error: testErr } = await admin
       .from("tests")
       .select("id, title, category_name, content")

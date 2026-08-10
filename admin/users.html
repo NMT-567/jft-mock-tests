@@ -38,27 +38,64 @@
     <div class="card" style="max-width:480px; padding:20px; margin-bottom:24px;">
       <h2 style="margin:0 0 4px; font-size:1rem;">Add Student</h2>
       <p style="color:var(--color-text-muted); font-size:0.85rem; margin:0 0 14px;">
-        Enter their email only — name and profile picture fill in automatically the first time they sign in with Google.
+        Enter their email — name and profile picture fill in automatically the first time they sign in with Google.
       </p>
-      <div style="display:flex; gap:10px;">
-        <input type="email" id="addStudentEmailInput" class="text-input" placeholder="student@gmail.com" style="flex:1;" />
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <input type="email" id="addStudentEmailInput" class="text-input" placeholder="student@gmail.com" style="flex:1; min-width:200px;" />
+        <select id="addStudentDurationSelect" class="text-input" style="width:auto;">
+          <option value="1">1 day</option>
+          <option value="3">3 days</option>
+          <option value="7">7 days</option>
+          <option value="14">14 days</option>
+          <option value="30" selected>30 days</option>
+          <option value="60">60 days</option>
+          <option value="90">90 days</option>
+          <option value="180">180 days</option>
+          <option value="365">365 days</option>
+          <option value="unlimited">No expiration</option>
+          <option value="custom">Custom date…</option>
+        </select>
+        <input type="datetime-local" id="addStudentCustomDate" class="text-input" style="width:auto;" hidden />
         <button type="button" class="btn btn-primary" id="addStudentBtn">Add Student</button>
       </div>
       <p id="addStudentMessage" style="margin:10px 0 0; font-size:0.85rem;" hidden></p>
     </div>
 
-    <div style="display:flex; gap:12px; align-items:center; margin-bottom:16px;">
-      <input type="text" id="userSearchInput" class="text-input" placeholder="Search by email or name…" style="max-width:320px;" />
+    <div class="access-summary-grid" id="accessSummaryGrid"></div>
+
+    <div style="display:flex; gap:12px; align-items:center; margin-bottom:12px; flex-wrap:wrap;">
+      <input type="text" id="userSearchInput" class="text-input" placeholder="Search by email or name…" style="max-width:280px;" />
+      <div class="access-filter-chips" id="accessFilterChips"></div>
+      <select id="userSortSelect" class="text-input" style="width:auto; margin-left:auto;">
+        <option value="expires_asc">Expiration date (soonest first)</option>
+        <option value="name_asc">Name (A–Z)</option>
+        <option value="email_asc">Email (A–Z)</option>
+        <option value="status">Status</option>
+        <option value="last_login_desc">Last login (recent first)</option>
+      </select>
       <span id="userCount" style="color: var(--color-text-muted); font-size:0.85rem;"></span>
+    </div>
+
+    <div class="bulk-action-toolbar" id="bulkActionToolbar" hidden>
+      <span id="bulkSelectedCount">0 students selected</span>
+      <div class="bulk-action-buttons">
+        <button type="button" class="btn btn-secondary btn-sm" id="bulkExtendBtn">Extend Access</button>
+        <button type="button" class="btn btn-secondary btn-sm" id="bulkSetExpirationBtn">Set Expiration</button>
+        <button type="button" class="btn btn-secondary btn-sm" id="bulkEnableBtn">Enable</button>
+        <button type="button" class="btn btn-secondary btn-sm" id="bulkDisableBtn">Disable</button>
+        <button type="button" class="btn btn-secondary btn-sm" id="bulkRevokeBtn">Revoke Sessions</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="bulkRemoveBtn">Remove Access</button>
+      </div>
     </div>
 
     <div id="usersTableWrap">
       <table class="admin-table" style="width:100%; border-collapse:collapse;">
         <thead>
           <tr style="text-align:left; border-bottom:1px solid var(--color-border);">
-            <th style="padding:10px 8px;"></th>
+            <th style="padding:10px 8px;"><input type="checkbox" id="selectAllCheckbox" aria-label="Select all" /></th>
             <th style="padding:10px 8px;">User</th>
             <th style="padding:10px 8px;">Status</th>
+            <th style="padding:10px 8px;">Access</th>
             <th style="padding:10px 8px;">Tests</th>
             <th style="padding:10px 8px;">Last Login</th>
             <th style="padding:10px 8px;">Actions</th>
@@ -87,10 +124,45 @@
     </div>
   </dialog>
 
+  <dialog id="extendAccessDialog" class="modal">
+    <div class="modal-body">
+      <h2>Extend Access</h2>
+      <p id="extendAccessTarget" style="color:var(--color-text-muted); font-size:0.9rem;"></p>
+      <p id="extendAccessCurrent" style="font-size:0.9rem;"></p>
+      <div class="duration-choice-grid" id="extendDurationChoices">
+        <button type="button" class="duration-choice-btn" data-days="7">7 days</button>
+        <button type="button" class="duration-choice-btn" data-days="14">14 days</button>
+        <button type="button" class="duration-choice-btn" data-days="30">30 days</button>
+        <button type="button" class="duration-choice-btn" data-days="60">60 days</button>
+        <button type="button" class="duration-choice-btn" data-days="90">90 days</button>
+        <button type="button" class="duration-choice-btn" data-days="custom">Custom date…</button>
+      </div>
+      <input type="datetime-local" id="extendCustomDate" class="text-input" style="margin-top:10px;" hidden />
+      <p id="extendAccessPreview" style="font-size:0.85rem; color:var(--color-text-muted); margin-top:10px;"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="cancelExtendBtn">Cancel</button>
+        <button type="button" class="btn btn-primary" id="confirmExtendBtn" disabled>Confirm Extension</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="setExpirationDialog" class="modal">
+    <div class="modal-body">
+      <h2 id="setExpirationTitle">Change Expiration</h2>
+      <p id="setExpirationTarget" style="color:var(--color-text-muted); font-size:0.9rem;"></p>
+      <label class="settings-row-label" style="display:block; margin-top:12px;">Expiration date &amp; time</label>
+      <input type="datetime-local" id="setExpirationDate" class="text-input" style="margin-top:6px;" />
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="cancelSetExpirationBtn">Cancel</button>
+        <button type="button" class="btn btn-primary" id="confirmSetExpirationBtn">Save Changes</button>
+      </div>
+    </div>
+  </dialog>
+
   <footer class="site-footer">
     <p>&copy; <span id="year"></span> Nihongo Mock Test Admin.</p>
   </footer>
 
-  <script type="module" src="js/users.js?v=3"></script>
+  <script type="module" src="js/users.js?v=4"></script>
 </body>
 </html>

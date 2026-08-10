@@ -145,3 +145,93 @@ a.action-card { text-decoration: none; color: inherit; }
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
+
+/* =========================================================
+   ACCESS MANAGEMENT — users.html (access expiration + bulk
+   management feature). Reuses existing tokens (--color-border,
+   --color-text-muted, --color-surface-alt, .btn/.btn-sm/.card)
+   rather than introducing a new design system, per spec.
+   ========================================================= */
+.access-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.access-summary-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: border-color var(--transition-fast, 0.15s);
+}
+.access-summary-card:hover { border-color: var(--color-primary); }
+.access-summary-card.active-filter { border-color: var(--color-primary); box-shadow: 0 0 0 1px var(--color-primary) inset; }
+.access-summary-card-count { font-size: 1.5rem; font-weight: 700; line-height: 1.1; }
+.access-summary-card-label { font-size: 0.78rem; color: var(--color-text-muted); margin-top: 2px; }
+
+.access-filter-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.access-filter-chip {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: var(--color-text-muted);
+}
+.access-filter-chip.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+
+.access-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.access-badge-active { background: #e3f7ec; color: #1e9e5a; }
+.access-badge-expiring { background: #fdf1e0; color: #c98a1e; }
+.access-badge-expired { background: #fbe9e9; color: #c94141; }
+.access-badge-disabled { background: #f1f1f3; color: #6b6f76; }
+.access-badge-none { background: #f1f1f3; color: #8a8f98; }
+
+.bulk-action-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  background: var(--color-primary-light, #eef4ff);
+  border: 1px solid var(--color-primary);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.bulk-action-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.duration-choice-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.duration-choice-btn {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.duration-choice-btn.selected { border-color: var(--color-primary); background: var(--color-primary-light, #eef4ff); font-weight: 600; }
+
+/* Responsive: keep the table usable on narrow screens by letting it
+   scroll horizontally rather than squeezing every column — a full
+   card-layout rebuild was judged out of scope for this pass (see final
+   report), but this alone keeps every row/column readable and the
+   bulk checkboxes tappable at any width, which was the hard requirement. */
+@media (max-width: 720px) {
+  #usersTableWrap { overflow-x: auto; }
+  .admin-table { min-width: 640px; }
+  .access-summary-grid { grid-template-columns: repeat(2, 1fr); }
+}

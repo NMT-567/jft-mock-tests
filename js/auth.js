@@ -85,11 +85,25 @@ export async function requireAuth() {
     return null;
   }
   const profile = await getProfile();
-  if (!profile || profile.status !== "active") {
+  if (!profile || profile.status !== "active" || isAccessExpired(profile)) {
     window.location.href = "access-denied.html";
     return null;
   }
   return profile;
+}
+
+/**
+ * Client-side check used only to decide WHEN to show the friendly
+ * "your access expired" redirect — never the actual authorization
+ * decision. That decision is made server-side, unconditionally, by
+ * is_active_user()/has_test_access() (see supabase/migrations/
+ * 0008_access_expiration.sql) on every real read of tests/content/
+ * attempts — so a student spoofing their own clock to dodge this
+ * redirect gains nothing: they'd just reach a blank dashboard or a
+ * denied RPC instead of this nicer message, never real access.
+ */
+export function isAccessExpired(profile) {
+  return !!profile?.access_expires_at && new Date(profile.access_expires_at) <= new Date();
 }
 
 function redirectToLogin() {
