@@ -42,11 +42,12 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 7px 14px;
+  padding: 8px 14px;
 }
 .exam-progress-text {
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
+  letter-spacing: 0.01em;
   color: var(--color-text);
   /* Guard against a long "Question 100 / 100" string on a 320px phone
      ever forcing the row (and the page) wider than the viewport —
@@ -60,15 +61,16 @@
 .timer {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   background: var(--color-surface-alt);
   border-radius: 999px;
-  padding: 5px 10px;
+  padding: 6px 12px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--color-text);
   border: 1px solid var(--color-border);
-  font-size: 0.85rem;
+  font-size: 0.84rem;
+  letter-spacing: 0.01em;
   flex-shrink: 0; /* the timer never gets squeezed — .exam-progress-text truncates instead */
 }
 .timer .icon { width: 16px; height: 16px; }
@@ -76,27 +78,28 @@
 .timer.timer-danger { background: var(--color-danger-light); color: var(--color-danger); border-color: var(--color-danger); animation: pulse 1s infinite; }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 
-.progress-bar-track { height: 4px; background: var(--color-gray-light); overflow: hidden; }
-.progress-bar-fill { height: 100%; width: 0%; background: var(--color-primary); transition: width var(--transition-base); }
+.progress-bar-track { height: 5px; background: var(--color-gray-light); overflow: hidden; border-radius: 0 0 4px 4px; }
+.progress-bar-fill { height: 100%; width: 0%; background: var(--color-primary); border-radius: 0 4px 4px 0; transition: width var(--transition-base); }
 
-/* Compact secondary row: test title + fullscreen/theme toggles */
+/* Compact secondary row: test title + mode indicator + theme toggle */
 .exam-util-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 14px;
-  gap: 10px;
+  padding: 7px 14px;
+  gap: 8px;
 }
 .exam-test-title {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
+  font-weight: 600;
   color: var(--color-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   min-width: 0;
 }
-.exam-util-actions { display: flex; gap: 6px; flex-shrink: 0; }
-.icon-btn-sm { width: 40px; height: 40px; min-height: 40px; }
+.exam-util-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.icon-btn-sm { width: 44px; height: 44px; min-height: 44px; }
 
 /* =========================================================
    SECTION BANNER — shown once whenever the current group
@@ -130,28 +133,31 @@
    ========================================================= */
 .exam-section-progress {
   display: flex;
-  gap: 6px;
-  padding: 6px 12px;
+  gap: 8px;
+  padding: 8px 12px;
   overflow-x: auto;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface);
+  scrollbar-width: none;
 }
+.exam-section-progress::-webkit-scrollbar { display: none; }
 .exam-section-progress-item {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   flex-shrink: 0;
-  padding: 5px 10px;
+  padding: 7px 14px;
   border-radius: 999px;
-  font-size: 0.76rem;
+  font-size: 0.78rem;
   font-weight: 600;
   white-space: nowrap;
   cursor: default; /* never clickable — informational only, per spec */
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 .exam-section-progress-item.completed { color: var(--color-success); background: var(--color-success-light); }
-.exam-section-progress-item.current { color: var(--color-primary-dark); background: var(--color-primary-light); font-weight: 800; }
-.exam-section-progress-item.upcoming { color: var(--color-text-muted); background: var(--color-gray-light); opacity: 0.7; }
-.exam-section-progress-glyph { font-size: 0.8rem; }
+.exam-section-progress-item.current { color: var(--color-primary-dark); background: var(--color-primary-light); font-weight: 800; box-shadow: 0 0 0 1px var(--color-primary) inset; }
+.exam-section-progress-item.upcoming { color: var(--color-text-muted); background: var(--color-gray-light); opacity: 0.65; }
+.exam-section-progress-glyph { font-size: 0.78rem; }
 
 /* =========================================================
    SECTION COMPLETE / INCOMPLETE MODAL TEXT
@@ -271,18 +277,20 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 .question-index-badge {
   background: var(--color-primary);
   color: #fff;
   font-weight: 700;
-  padding: 6px 14px;
+  padding: 6px 15px;
   border-radius: 999px;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
+  letter-spacing: 0.01em;
+  box-shadow: var(--shadow-sm);
 }
-.question-header-actions { display: flex; align-items: center; gap: 14px; }
-.question-marks { font-size: 0.85rem; color: var(--color-text-muted); font-weight: 600; }
+.question-header-actions { display: flex; align-items: center; gap: 12px; }
+.question-marks { font-size: 0.8rem; color: var(--color-text-muted); font-weight: 500; }
 
 .bookmark-btn {
   background: none;
@@ -306,17 +314,19 @@
   border-left: 4px solid var(--color-primary);
   border-radius: var(--radius-sm);
   padding: 14px 16px;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
   font-size: 0.95rem;
   color: var(--color-text-muted);
   white-space: pre-wrap;
+  line-height: 1.7;
 }
 
 .question-text {
   font-size: 1.2rem;
   font-weight: 600;
-  margin-bottom: 16px;
-  line-height: 1.55;
+  margin-bottom: 18px;
+  line-height: 1.75;
+  letter-spacing: 0.01em;
 }
 
 .question-image-wrap {
@@ -330,27 +340,35 @@
 .question-audio-wrap { margin-bottom: 16px; }
 .question-audio-wrap audio { width: 100%; }
 
-/* Large, touch-friendly option cards */
+/* Comfortable, touch-friendly option cards */
 .options-list { display: flex; flex-direction: column; gap: 12px; }
 .option-item {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 16px;
+  padding: 15px 16px;
   min-height: 56px;
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
-  transition: border-color var(--transition-fast), background var(--transition-fast);
+  transition: border-color var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
 }
-.option-item.selected { border-color: var(--color-primary); background: var(--color-primary-light); }
+.option-item.selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  box-shadow: 0 0 0 1px var(--color-primary) inset, var(--shadow-sm);
+}
 .option-item input[type="radio"] {
   width: 22px;
   height: 22px;
   accent-color: var(--color-primary);
   flex-shrink: 0;
 }
-.option-item label { flex: 1; cursor: pointer; font-size: 1rem; line-height: 1.4; }
+.option-item label { flex: 1; cursor: pointer; font-size: 1rem; line-height: 1.6; letter-spacing: 0.01em; }
+.option-item:focus-within { box-shadow: 0 0 0 2px var(--color-primary); }
+@media (prefers-reduced-motion: no-preference) {
+  .option-item.selected { transform: translateY(-1px); }
+}
 
 /* =========================================================
    FIXED BOTTOM NAVIGATION
@@ -378,16 +396,22 @@
   gap: 2px;
   background: none;
   border: none;
-  color: var(--color-text);
+  color: var(--color-text-muted);
   font-size: 0.72rem;
   font-weight: 600;
   min-height: var(--touch-target-min);
   min-width: 88px; /* keeps Previous/Next comfortably tappable even though they're no longer grid-equal-width */
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 .bottom-nav-btn .icon { width: 20px; height: 20px; }
 .bottom-nav-btn:active { background: var(--color-surface-alt); }
 .bottom-nav-btn:disabled { opacity: 0.4; }
 .bottom-nav-btn-submit { color: var(--color-danger); }
+/* Next is the primary forward action in a CBT flow — Previous stays
+   visually quiet by comparison (existing muted default, untouched). */
+#nextBtn { color: var(--color-primary-dark); font-weight: 700; }
+#nextBtn:active { background: var(--color-primary-light); }
 
 /* =========================================================
    PALETTE — BOTTOM SHEET
@@ -532,11 +556,17 @@
 .exam-mode-indicator:not([hidden]) { display: inline-flex; }
 
 /* =========================================================
-   SECURITY TOAST — small, auto-dismissing, never an alert()
+   SECURITY TOAST — small, auto-dismissing, never an alert().
+   Anchored to the bottom nav's own height + safe-area inset
+   (never a hardcoded guess) so it can never end up overlapping
+   Previous/Next, and capped to a comfortable max-width so a
+   longer message (e.g. "Context menu is disabled during the
+   exam.") wraps into a compact card instead of stretching into
+   an oversized pill or getting cut off on a narrow phone.
    ========================================================= */
 .security-toast-container {
   position: fixed;
-  bottom: 90px;
+  bottom: calc(var(--bottom-nav-height) + 16px + env(safe-area-inset-bottom, 0px));
   left: 50%;
   transform: translateX(-50%);
   z-index: 250;
@@ -544,20 +574,29 @@
   flex-direction: column;
   gap: 6px;
   align-items: center;
+  width: min(88vw, 340px);
   pointer-events: none;
 }
 .security-toast {
-  background: rgba(20, 20, 20, 0.92);
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(23, 27, 38, 0.94);
   color: #fff;
-  padding: 8px 16px;
-  border-radius: 999px;
-  font-size: 0.8rem;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  font-size: 0.82rem;
   font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
   opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 200ms ease, transform 200ms ease;
+  transform: translateY(10px) scale(0.98);
+  transition: opacity 220ms ease, transform 220ms ease;
 }
-.security-toast.visible { opacity: 1; transform: translateY(0); }
+.security-toast.visible { opacity: 1; transform: translateY(0) scale(1); }
+@media (prefers-reduced-motion: reduce) {
+  .security-toast { transition: opacity 120ms linear; transform: none; }
+}
 
 /* =========================================================
    EXAM START NOTICE — shown before the exam actually begins
