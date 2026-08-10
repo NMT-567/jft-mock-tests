@@ -39,9 +39,6 @@
       <button type="button" class="icon-btn icon-btn-sm" id="paletteToggleBtn" aria-label="Open question palette" aria-haspopup="dialog" aria-expanded="false">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
       </button>
-      <button type="button" class="icon-btn icon-btn-sm" id="fullscreenBtn" aria-label="Toggle fullscreen">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-      </button>
       <button type="button" class="icon-btn icon-btn-sm" id="examDarkModeToggle" aria-label="Toggle dark mode">
         <svg class="icon icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         <svg class="icon icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
@@ -56,20 +53,6 @@
   <div class="section-banner" id="sectionBanner" hidden>
     <span class="section-banner-index" id="sectionBannerIndex">Section 1 of 4</span>
     <h1 class="section-banner-title" id="sectionBannerTitle">Scripts &amp; Vocabulary</h1>
-  </div>
-
-  <!-- ZOOM CONTROLS — application-level zoom (css `zoom` property, scoped
-       to #groupContent only). Only ever shown/active while the exam is in
-       Fullscreen API fullscreen, since that's the ONLY situation where the
-       browser's own native pinch/page zoom is unavailable (a real, still-
-       current platform limitation on Android Chrome/Firefox/Edge — the
-       viewport meta's zoom settings are ignored while fullscreenElement is
-       set). Outside fullscreen, this is hidden and native browser zoom
-       handles everything instead — see js/exam.js's updateZoomModeForFullscreen(). -->
-  <div class="exam-zoom-controls no-print" id="examZoomControls" hidden>
-    <button type="button" class="zoom-btn" id="zoomOutBtn" aria-label="Zoom out">−</button>
-    <span class="zoom-level" id="zoomLevelText" aria-live="polite">100%</span>
-    <button type="button" class="zoom-btn" id="zoomInBtn" aria-label="Zoom in">+</button>
   </div>
 
   <!-- MAIN GROUP AREA — fully populated by exam.js, varies by group type -->
@@ -215,28 +198,6 @@
   <!-- SECURITY TOASTS — small, auto-dismissing, never an alert() -->
   <div class="security-toast-container no-print" id="securityToastContainer" aria-live="polite"></div>
 
-  <!-- SECURITY: fullscreen requirement — ONE dialog reused for both the
-       pre-exam gate and any mid-exam exit, per the "avoid competing
-       overlays" requirement. Student never sees browser-API language;
-       text/button label are set dynamically in js/exam.js depending on
-       which of the two moments this is. Native showModal() already makes
-       the exam behind it inert and unclickable — no separate overlay
-       needed, and nothing here can end up in the hit-testing layer while
-       hidden ([hidden]/dialog-without-[open] default to display:none). -->
-  <dialog id="examFullscreenModal" class="modal exam-security-modal" aria-labelledby="examFullscreenTitle" aria-describedby="examFullscreenText" aria-modal="true">
-    <div class="modal-body exam-security-modal-body">
-      <div class="exam-security-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
-      </div>
-      <h2 id="examFullscreenTitle">Exam Mode</h2>
-      <p id="examFullscreenText">Fullscreen is required for this exam. Please enter fullscreen to begin your test.</p>
-      <p class="exam-security-modal-error" id="examFullscreenError" hidden>Please allow fullscreen mode to continue.</p>
-      <div class="modal-actions exam-security-modal-actions">
-        <button type="button" class="btn btn-primary exam-security-modal-btn" id="examFullscreenBtn">Enter Fullscreen</button>
-      </div>
-    </div>
-  </dialog>
-
   <!-- SECURITY: generic exam-security warning shown to students (currently triggered by the devtools heuristic — element/JS-variable names kept as-is internally; only the STUDENT-FACING text changed, per the requirement to never expose which detection method fired). -->
   <dialog id="devtoolsWarningModal" class="modal exam-security-modal" aria-labelledby="devtoolsWarningTitle" aria-describedby="devtoolsWarningText" aria-modal="true">
     <div class="modal-body exam-security-modal-body">
@@ -263,6 +224,10 @@
     </div>
   </dialog>
 
-  <script type="module" src="js/exam.js?v=34"></script>
+  <footer class="site-footer">
+    <p>&copy; 2026 NihongoMockTest. All rights reserved.</p>
+  </footer>
+
+  <script type="module" src="js/exam.js?v=35"></script>
 </body>
 </html>

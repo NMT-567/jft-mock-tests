@@ -11,14 +11,13 @@ import { ExamTimer, getTimerState, formatTime } from "./timer.js?v=5";
 import { renderPalette, updatePaletteState, computeSummary, computeGroupCompletion } from "./palette.js?v=3";
 import { bindArrowKeyNavigation, resolveJumpQuestionId, bindSwipeToClose } from "./navigation.js?v=3";
 import { saveSession, loadSession, clearSession, saveResult, startOrResumeAttempt, startFreshAttempt, submitAttemptServerSide } from "./storage.js?v=8";
-import { requireAuth } from "./auth.js?v=4";
-import { hidePageLoader, initThemeToggle, debounce, initPinchZoom } from "./utils.js?v=6";
+import { requireAuth } from "./auth.js?v=5";
+import { hidePageLoader, initThemeToggle, debounce } from "./utils.js?v=6";
 import { buildSharedBlock, buildQuestionBlock } from "./groupRenderer.js?v=8";
 
 import {
   lockdownInputSurface,
   blockKeyboardShortcuts,
-  initFullscreenGuard,
   startDevToolsHeuristic,
   initVisibilityGuard,
 } from "./security.js?v=5";
@@ -39,7 +38,6 @@ const els = {
   progressBarFill: document.getElementById("progressBarFill"),
   timerDisplay: document.getElementById("timerDisplay"),
   timerText: document.getElementById("timerText"),
-  fullscreenBtn: document.getElementById("fullscreenBtn"),
   examDarkModeToggle: document.getElementById("examDarkModeToggle"),
 
   sectionBanner: document.getElementById("sectionBanner"),
@@ -86,14 +84,6 @@ const els = {
   sectionTransitionArrowRow: document.getElementById("sectionTransitionArrowRow"),
   sectionTransitionToName: document.getElementById("sectionTransitionToName"),
 
-  examFullscreenModal: document.getElementById("examFullscreenModal"),
-  examFullscreenText: document.getElementById("examFullscreenText"),
-  examFullscreenError: document.getElementById("examFullscreenError"),
-  examFullscreenBtn: document.getElementById("examFullscreenBtn"),
-  zoomOutBtn: document.getElementById("zoomOutBtn"),
-  zoomInBtn: document.getElementById("zoomInBtn"),
-  zoomLevelText: document.getElementById("zoomLevelText"),
-  examZoomControls: document.getElementById("examZoomControls"),
   devtoolsWarningModal: document.getElementById("devtoolsWarningModal"),
   devtoolsWarningText: document.getElementById("devtoolsWarningText"),
   devtoolsWarningDismissBtn: document.getElementById("devtoolsWarningDismissBtn"),
@@ -117,8 +107,6 @@ let state = {
   attemptId: null, // Supabase test_attempts row id, set once startOrResumeAttempt() resolves
 };
 let timer = null;
-let fullscreenGuard = null;
-let pendingFullscreenIsInitialStart = false;
 let lastRenderedSectionIndex = -1;
 let backButtonTrapActive = false;
 let pendingRetryIsAutoSubmit = false; // set by showSubmitFailedModal(), read by the retry button's handler
@@ -240,18 +228,12 @@ function finishInitAndRenderExam(isResume) {
   renderPage(state.currentPageIndex);
   refreshPaletteAndSummary();
   bindEvents();
-  applyZoom();
   hidePageLoader();
 
   // A fresh start shows the security notice first — resuming skips it,
   // since the student already acknowledged it once for this attempt and
   // re-showing it mid-exam would just be friction with no informational
-  // value. Fullscreen is requested from inside a direct user-gesture
-  // click handler specifically because a request made outside one is
-  // often silently denied by the browser — see
-  // ensureFullscreenBeforeContinuing()/openFullscreenRequirement() below
-  // for the actual gate, which also verifies the request really
-  // succeeded rather than assuming it did.
+  // value.
   if (isResume) {
     startTimer();
     beginSecuredExam(false);
@@ -300,55 +282,23 @@ async function handleStartFreshChoice(profile, testId, isAnyAdminPreview, previe
 
 /**
  * @param {boolean} isInitialStart - true only for the very first "Start
- * Exam" click (never for a resume). Passed through to
- * ensureFullscreenBeforeContinuing(), which is the only place that
- * decides whether/when startTimer() runs for that path — the resume
- * path above already started its own timer, unchanged, before this is
- * ever called, and this function must never start a second one.
+ * Exam" click (never for a resume) — the resume path above already
+ * started its own timer, unchanged, before this is ever called, and
+ * this function must never start a second one.
+ *
+ * Previously gated on an admin-configurable "require fullscreen"
+ * setting before starting the timer (a whole separate dialog flow —
+ * see git history if that's ever needed again). Removed entirely, on
+ * explicit request: Android/Chrome/Firefox ignore the viewport meta's
+ * zoom settings for the whole duration the Fullscreen API is active,
+ * which made native pinch-zoom impossible during any fullscreen-
+ * enforced exam — the fix is to never enter fullscreen in the first
+ * place, not to build a replacement zoom system for inside it.
  */
 function beginSecuredExam(isInitialStart) {
   initSecurity();
   initBackButtonTrap();
-  ensureFullscreenBeforeContinuing(isInitialStart);
-}
-
-/** True only when this test's admin-configured security settings actually require fullscreen AND the browser genuinely supports the Fullscreen API — a student on a browser/embedded webview without it is never permanently blocked by a requirement it has no way to satisfy. */
-function fullscreenIsRequired() {
-  return !!test.securitySettings?.requestFullscreen && document.fullscreenEnabled !== false && typeof document.documentElement.requestFullscreen === "function";
-}
-
-/** Runs once right after initSecurity() on both the initial start and every resume. If fullscreen isn't required (or the browser can't do it, or the student is already in it), nothing blocks — and for the initial-start path specifically, THIS is where the exam timer actually starts, so the exam genuinely "doesn't begin" until fullscreen is confirmed, without touching the timer's own pause/resume policy anywhere else. */
-function ensureFullscreenBeforeContinuing(isInitialStart) {
-  if (!fullscreenIsRequired() || document.fullscreenElement) {
-    if (isInitialStart) startTimer();
-    return;
-  }
-  openFullscreenRequirement(isInitialStart);
-}
-
-/** The ONE fullscreen-requirement dialog, reused for both the pre-exam gate and any mid-exam exit — text/button label set here depending on which moment this is; never mentions the underlying browser API or detection mechanism to the student. */
-function openFullscreenRequirement(isInitialStart) {
-  pendingFullscreenIsInitialStart = isInitialStart;
-  els.examFullscreenText.textContent = isInitialStart
-    ? "Fullscreen is required for this exam. Please enter fullscreen to begin your test."
-    : "Fullscreen is required to continue your exam. Please return to fullscreen to continue.";
-  els.examFullscreenBtn.textContent = isInitialStart ? "Enter Fullscreen" : "Return to Fullscreen";
-  els.examFullscreenError.hidden = true;
-  if (!els.examFullscreenModal.open) els.examFullscreenModal.showModal();
-}
-
-/** Never assumes requestFullscreen() succeeded just because it resolved — re-checks document.fullscreenElement afterward, which is the only reliable signal (rejection, silent no-op, and success all resolve the same promise shape). Only on a confirmed success does the modal close and (for the initial-start path only) the timer start. */
-async function handleFullscreenRequirementClick() {
-  els.examFullscreenError.hidden = true;
-  if (fullscreenGuard) await fullscreenGuard.requestFullscreen();
-  if (document.fullscreenElement) {
-    els.examFullscreenModal.close();
-    logSecurityEvent("fullscreen_entered");
-    if (pendingFullscreenIsInitialStart) startTimer();
-    pendingFullscreenIsInitialStart = false;
-  } else {
-    els.examFullscreenError.hidden = false;
-  }
+  if (isInitialStart) startTimer();
 }
 
 function openExamStartNotice() {
@@ -360,7 +310,6 @@ function openExamStartNotice() {
   if (sec.disableContextMenu) lines.push("Right-click is disabled.");
   if (sec.disablePrint) lines.push("Printing is disabled.");
   lines.push("Please remain on the exam screen.");
-  if (sec.detectFullscreenExit) lines.push("Leaving fullscreen may trigger a warning.");
   lines.push("Previous sections cannot be reopened.");
   lines.forEach((line) => {
     const li = document.createElement("li");
@@ -1065,102 +1014,6 @@ export function convertRawScore(raw, totalMarks, rs) {
 }
 
 /* =========================================================
-   FULLSCREEN
-   ========================================================= */
-function toggleFullscreen() {
-  if (!document.fullscreenElement) fullscreenGuard?.requestFullscreen();
-  else document.exitFullscreen?.().catch(() => {});
-}
-
-/* =========================================================
-   ZOOM — adaptive: native browser pinch/page zoom is used
-   whenever the exam is NOT in Fullscreen API fullscreen (the
-   viewport meta already permits it — see exam.html — so nothing
-   extra is needed for that case). The application-level CSS-zoom
-   system below is used ONLY while fullscreen IS active, because
-   Android Chrome/Firefox/Edge ignore the viewport meta's zoom
-   settings entirely for the duration of Fullscreen API fullscreen
-   — a real, still-current platform limitation (confirmed again
-   this session), not something fixable via meta/CSS/JS alone —
-   so native zoom would otherwise be completely unavailable for
-   the entire exam. A simple in-memory value for the current exam
-   session only, per spec preference — resets to 100% on a fresh
-   page load/session AND every time fullscreen exits (see
-   updateZoomModeForFullscreen below), same as the rest of this
-   app's non-persisted UI state.
-   ========================================================= */
-const ZOOM_LEVELS = [80, 90, 100, 110, 120, 130, 140, 150];
-let zoomLevel = 100;
-
-function applyZoom() {
-  document.documentElement.style.setProperty("--exam-zoom", String(zoomLevel / 100));
-  els.zoomLevelText.textContent = `${zoomLevel}%`;
-  els.zoomOutBtn.disabled = zoomLevel <= ZOOM_LEVELS[0];
-  els.zoomInBtn.disabled = zoomLevel >= ZOOM_LEVELS[ZOOM_LEVELS.length - 1];
-}
-function zoomOut() {
-  const idx = ZOOM_LEVELS.indexOf(zoomLevel);
-  if (idx > 0) {
-    zoomLevel = ZOOM_LEVELS[idx - 1];
-    applyZoom();
-  }
-}
-function zoomIn() {
-  const idx = ZOOM_LEVELS.indexOf(zoomLevel);
-  if (idx < ZOOM_LEVELS.length - 1) {
-    zoomLevel = ZOOM_LEVELS[idx + 1];
-    applyZoom();
-  }
-}
-
-// Two-finger pinch drives the exact same zoomLevel/applyZoom() the
-// +/- buttons use — see utils.js's initPinchZoom. Only ever RUNNING
-// while fullscreen is active (started/torn down below) — outside
-// fullscreen its non-passive touchmove listener would itself be the
-// thing blocking the browser's own native pinch gesture, which is
-// exactly what this adaptive behavior is meant to avoid.
-let pinchZoomHandle = null;
-
-/**
- * The single source of truth for which zoom mode is active. Called
- * once immediately (so a test that never requires fullscreen at all
- * starts, and stays, in native mode with zero flicker) and again on
- * every native `fullscreenchange` event. Deliberately does NOT try to
- * guess fullscreen state from screen size/orientation — only the
- * browser's own document.fullscreenElement is treated as ground truth,
- * per this session's spec.
- */
-function updateZoomModeForFullscreen() {
-  const isFullscreen = !!document.fullscreenElement;
-  if (els.examZoomControls) els.examZoomControls.hidden = !isFullscreen;
-  if (isFullscreen) {
-    if (!pinchZoomHandle) {
-      pinchZoomHandle = initPinchZoom({
-        getLevel: () => zoomLevel,
-        setLevel: (n) => { zoomLevel = n; applyZoom(); },
-        levels: ZOOM_LEVELS,
-      });
-    }
-  } else {
-    if (pinchZoomHandle) {
-      pinchZoomHandle.teardown();
-      pinchZoomHandle = null;
-    }
-    // Leaving fullscreen (or never having entered it) always returns
-    // to a clean 100% — never leave the custom scale applied once
-    // native browser zoom is what the person is actually using, per
-    // this session's explicit "do not leave the custom scale applied
-    // after fullscreen exits" requirement.
-    if (zoomLevel !== 100) {
-      zoomLevel = 100;
-      applyZoom();
-    }
-  }
-}
-document.addEventListener("fullscreenchange", updateZoomModeForFullscreen);
-updateZoomModeForFullscreen();
-
-/* =========================================================
    SECURITY WIRING (see security.js for what is/isn't enforceable)
    ========================================================= */
 /**
@@ -1263,15 +1116,6 @@ function initSecurity() {
     });
   }
 
-  if (sec.requestFullscreen) {
-    fullscreenGuard = initFullscreenGuard(() => {
-      if (sec.detectFullscreenExit) {
-        logSecurityEvent("fullscreen_exited");
-        openFullscreenRequirement(false);
-      }
-    });
-  }
-
   if (sec.blockShortcuts) {
     startDevToolsHeuristic(
       () => {
@@ -1321,7 +1165,6 @@ function initSecurity() {
 function bindEvents() {
   els.prevBtn.addEventListener("click", goPrev);
   els.nextBtn.addEventListener("click", goNext);
-  els.fullscreenBtn.addEventListener("click", toggleFullscreen);
 
   els.paletteToggleBtn.addEventListener("click", togglePalette);
   els.sheetBackdrop.addEventListener("click", closePalette);
@@ -1341,9 +1184,6 @@ function bindEvents() {
     els.examStartNoticeModal.close();
     beginSecuredExam(true);
   });
-  els.examFullscreenBtn.addEventListener("click", handleFullscreenRequirementClick);
-  els.zoomOutBtn.addEventListener("click", zoomOut);
-  els.zoomInBtn.addEventListener("click", zoomIn);
 
   els.stayInSectionBtn.addEventListener("click", () => els.sectionCompleteModal.close());
   els.continueToNextSectionBtn.addEventListener("click", () => {
