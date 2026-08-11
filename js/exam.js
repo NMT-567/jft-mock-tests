@@ -6,7 +6,7 @@
  * individually (via test.questionIndex) and jumping to one switches to its
  * group's page, then scrolls to that question's anchor within it.
  */
-import { loadTest, findQuestionLocation } from "./loader.js?v=8";
+import { loadTest, findQuestionLocation } from "./loader.js?v=9";
 import { ExamTimer, getTimerState, formatTime } from "./timer.js?v=5";
 import { renderPalette, updatePaletteState, computeSummary, computeGroupCompletion } from "./palette.js?v=3";
 import { bindArrowKeyNavigation, resolveJumpQuestionId, bindSwipeToClose } from "./navigation.js?v=3";
@@ -33,6 +33,9 @@ const els = {
   fullscreenLockModal: document.getElementById("fullscreenLockModal"),
   fullscreenLockError: document.getElementById("fullscreenLockError"),
   fullscreenLockBtn: document.getElementById("fullscreenLockBtn"),
+  mobileGateOverlay: document.getElementById("mobileGateOverlay"),
+  mobileGateTitle: document.getElementById("mobileGateTitle"),
+  mobileGateText: document.getElementById("mobileGateText"),
   resumeChoiceModal: document.getElementById("resumeChoiceModal"),
   resumeChoiceError: document.getElementById("resumeChoiceError"),
   resumeChoiceStartFreshBtn: document.getElementById("resumeChoiceStartFreshBtn"),
@@ -124,6 +127,7 @@ let pendingFullscreenConfirmedCallback = null;
  * safely if a lifecycle event fires before the exam has actually started
  * (e.g. during the pre-start gate itself). */
 let examIsActive = false;
+let isViewportBlocked = false;
 const examContentZoom = initExamContentZoom(els.groupContent);
 let lastRenderedSectionIndex = -1;
 let backButtonTrapActive = false;
@@ -251,15 +255,9 @@ function finishInitAndRenderExam(isResume) {
   // A fresh start shows the security notice first — resuming skips it,
   // since the student already acknowledged it once for this attempt and
   // re-showing it mid-exam would just be friction with no informational
-  // value.
-  if (isResume) {
-    runFullscreenGate(() => {
-      startTimer();
-      beginSecuredExam();
-    });
-  } else {
-    openExamStartNotice();
-  }
+  // value. Either way, proceedToExamStart() decides FIRST whether the
+  // viewport is even valid — see its own comment.
+  proceedToExamStart(isResume);
 }
 
 /**
@@ -500,6 +498,36 @@ function armFullscreenLock() {
  * without a real user gesture — see runFullscreenGate/the button
  * handler, which are the only two places that do).
  */
+/** True whenever EITHER independent block reason applies — the one
+ * check every state-changing exam action (goPrev/goNext/bookmark/
+ * submit/etc.) uses, so a caller never has to know or care which
+ * specific reason is currently active. */
+function isExamBlocked() {
+  return isFullscreenLocked || isViewportBlocked;
+}
+
+/** Makes the timer/pinch-zoom match the CURRENT combined block state.
+ * Called after EITHER isFullscreenLocked or isViewportBlocked changes —
+ * never called with stale reasoning about only one of them, so toggling
+ * one flag can never accidentally resume the exam while the other
+ * reason is still blocking. Idempotent via each target's own guards
+ * (ExamTimer.start() calls stop() first internally; examContentZoom
+ * just overwrites its internal enabled flag) — safe to call repeatedly
+ * with no state change. */
+function syncBlockedSideEffects() {
+  if (isExamBlocked()) {
+    if (timer) timer.stop();
+    examContentZoom.disable();
+  } else {
+    if (timer) timer.start();
+    // Only relevant for a test that actually requires fullscreen — for
+    // one that doesn't, native browser zoom already works fine on its
+    // own, and enabling the custom gesture here too would wrongly
+    // hijack it (it calls preventDefault() on a 2-finger touchmove).
+    if (fullscreenIsRequired()) examContentZoom.enable();
+  }
+}
+
 function reconcileExamLifecycle() {
   if (!examIsActive || !fullscreenIsRequired()) return;
   const isFullscreen = !!document.fullscreenElement;
@@ -508,19 +536,98 @@ function reconcileExamLifecycle() {
     if (isFullscreenLocked) {
       isFullscreenLocked = false;
       if (els.fullscreenLockModal.open) els.fullscreenLockModal.close();
-      examContentZoom.enable();
       logSecurityEvent("fullscreen_entered");
-      if (timer) timer.start();
+      syncBlockedSideEffects();
     }
     // else: already unlocked and fullscreen is genuinely active — a true no-op.
   } else {
     if (!isFullscreenLocked) {
       isFullscreenLocked = true;
-      if (timer) timer.stop();
-      examContentZoom.disable();
       logSecurityEvent("fullscreen_exited");
+      syncBlockedSideEffects();
     }
     if (!els.fullscreenLockModal.open) els.fullscreenLockModal.showModal();
+  }
+}
+
+/* =========================================================
+   VIEWPORT GATE — mobile-only exam access (spec: Goal 1). A
+   viewport-SIZE check only, using window.innerWidth/innerHeight —
+   explicitly NOT a security mechanism (a desktop browser resized
+   narrow reads as "mobile" the same as a real phone; this exists
+   purely to keep the exam's mobile-only layout from ever being
+   used in a shape it wasn't designed for, not to enforce a device
+   policy). Independent of, and never interferes with, the
+   fullscreen-lock system above — both feed the same combined
+   isExamBlocked()/syncBlockedSideEffects() so either one alone is
+   enough to pause the exam, and both must clear before it resumes.
+   ========================================================= */
+const MOBILE_MAX_WIDTH = 767;
+
+/** "ok" = valid mobile-portrait shape. "rotate" = looks like a phone
+ * that's currently sideways (its SHORT side still fits a phone) —
+ * distinct from "desktop" (neither dimension resembles a phone at
+ * all) so the message shown actually matches what's really going on,
+ * per the spec's explicit ask for two different messages. */
+function getViewportGateState() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  if (w <= MOBILE_MAX_WIDTH && h >= w) return "ok";
+  if (h <= MOBILE_MAX_WIDTH && w > h) return "rotate";
+  return "desktop";
+}
+
+/** Set only while the page hasn't shown either the exam-start-notice
+ * or fullscreen-lock dialog yet — native <dialog> elements render in
+ * the browser's top layer, which always wins over this plain fixed
+ * div's z-index regardless of stacking order, so those dialogs must
+ * never be allowed to open while the gate is blocking in the first
+ * place. Holds which start path to resume once the viewport clears. */
+let pendingInitialResumeFlag = null;
+
+function updateViewportGate() {
+  const state = getViewportGateState();
+  const shouldBlock = state !== "ok";
+  if (shouldBlock !== isViewportBlocked) {
+    isViewportBlocked = shouldBlock;
+    els.mobileGateOverlay.hidden = !shouldBlock;
+    if (shouldBlock) {
+      if (state === "rotate") {
+        els.mobileGateTitle.textContent = "Rotate Your Phone";
+        els.mobileGateText.textContent = "Please rotate your phone to portrait mode to continue this mock test.";
+      } else {
+        els.mobileGateTitle.textContent = "Mobile Device Required";
+        els.mobileGateText.textContent = "This mock test is optimized for mobile devices in portrait view. Please open this page on a phone to begin.";
+      }
+    }
+    syncBlockedSideEffects();
+  }
+  if (!shouldBlock && pendingInitialResumeFlag !== null) {
+    const isResume = pendingInitialResumeFlag;
+    pendingInitialResumeFlag = null;
+    proceedToExamStart(isResume);
+  }
+}
+
+/** The one place that decides whether it's safe to show the exam-start-
+ * notice/resume-fullscreen-gate dialogs yet, replacing the direct
+ * isResume branch that used to run unconditionally at this point in
+ * init(). If the viewport isn't valid, nothing opens — not even a
+ * dialog — until updateViewportGate() sees it clear and calls this
+ * again with the same isResume value. */
+function proceedToExamStart(isResume) {
+  if (getViewportGateState() !== "ok") {
+    pendingInitialResumeFlag = isResume;
+    updateViewportGate();
+    return;
+  }
+  if (isResume) {
+    runFullscreenGate(() => {
+      startTimer();
+      beginSecuredExam();
+    });
+  } else {
+    openExamStartNotice();
   }
 }
 
@@ -827,7 +934,7 @@ function selectOption(questionId, option) {
 }
 
 function toggleBookmark(questionId, btnEl) {
-  if (isFullscreenLocked) return;
+  if (isExamBlocked()) return;
   const idx = state.bookmarks.indexOf(questionId);
   if (idx === -1) state.bookmarks.push(questionId);
   else state.bookmarks.splice(idx, 1);
@@ -837,7 +944,7 @@ function toggleBookmark(questionId, btnEl) {
 }
 
 function jumpToQuestionId(questionId) {
-  if (isFullscreenLocked) return;
+  if (isExamBlocked()) return;
   const location = findQuestionLocation(test, questionId);
   if (!location) return;
   // Defensive backstop — the palette itself only ever renders the current section's questions (see currentSectionQuestionIndex), but this guards against jumping to a locked/upcoming section by any other path (e.g. a stale anchor).
@@ -857,7 +964,7 @@ function jumpToQuestionId(questionId) {
 }
 
 function goPrev() {
-  if (isFullscreenLocked) return;
+  if (isExamBlocked()) return;
   const { first } = sectionPageRange(state.currentSectionIndex);
   if (state.currentPageIndex > first) {
     state.currentPageIndex -= 1;
@@ -868,7 +975,7 @@ function goPrev() {
 }
 
 function goNext() {
-  if (isFullscreenLocked) return;
+  if (isExamBlocked()) return;
   const currentGroup = test.pages[state.currentPageIndex];
 
   // Any required question on the page currently being LEFT blocks
@@ -1049,7 +1156,7 @@ function startTimer() {
    SUBMIT FLOW — iterates every question across every section/group
    ========================================================= */
 function openSubmitConfirm() {
-  if (isFullscreenLocked) return;
+  if (isExamBlocked()) return;
   const summary = computeSummary(test.questionIndex, state.answers, state.bookmarks);
   els.confirmAnswered.textContent = String(summary.answered);
   els.confirmUnanswered.textContent = String(summary.unanswered);
@@ -1095,7 +1202,7 @@ let submissionInProgress = false;
 
 async function submitTest(isAutoSubmit = false) {
   if (submissionInProgress) return;
-  if (isFullscreenLocked) return; // defense-in-depth — goNext()/openSubmitConfirm() already block the normal path here, but this covers any other trigger too
+  if (isExamBlocked()) return; // defense-in-depth — goNext()/openSubmitConfirm() already block the normal path here, but this covers any other trigger too
   submissionInProgress = true;
   if (timer) timer.stop();
   logSecurityEvent("exam_submitted");
@@ -1524,6 +1631,15 @@ function bindEvents() {
   });
   window.addEventListener("pageshow", () => reconcileExamLifecycle());
   window.addEventListener("focus", () => reconcileExamLifecycle());
+
+  // Viewport-size gate (mobile-only exam) — resize covers a desktop
+  // window being resized/devtools-emulated; orientationchange covers a
+  // real phone being rotated (some browsers fire one but not promptly
+  // fire a resize for the same rotation, so both are registered).
+  // updateViewportGate() itself is fully idempotent, so no harm if both
+  // fire for the same real change.
+  window.addEventListener("resize", updateViewportGate);
+  window.addEventListener("orientationchange", updateViewportGate);
 
   // Defensive supplement to requestFullscreenAndVerify()'s own reality-
   // check (document.fullscreenElement) — covers the rare case where a

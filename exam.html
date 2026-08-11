@@ -166,6 +166,23 @@
        Exam click also requests it (a real user gesture — required by
        every browser) and the exam only actually begins once fullscreen
        is confirmed active; see js/exam.js's handleStartExamClick(). -->
+  <!-- VIEWPORT GATE — blocks desktop-sized or landscape-phone viewports.
+       A plain fixed div, not a <dialog>, since it must be able to block
+       everything (including the Start Exam flow itself) the instant the
+       page loads, before any dialog-based flow has even begun. Purely a
+       viewport-size check — explicitly NOT a security mechanism (a
+       resized desktop window reads as "mobile" the same as a real
+       phone) — see js/exam.js's updateViewportGate(). -->
+  <div id="mobileGateOverlay" class="mobile-gate-overlay" role="alertdialog" aria-labelledby="mobileGateTitle" aria-describedby="mobileGateText" hidden>
+    <div class="mobile-gate-card">
+      <div class="exam-security-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>
+      </div>
+      <h2 id="mobileGateTitle">Mobile Device Required</h2>
+      <p id="mobileGateText">This mock test is optimized for mobile devices in portrait view. Please open this page on a phone to begin.</p>
+    </div>
+  </div>
+
   <dialog id="examStartNoticeModal" class="modal">
     <div class="modal-body">
       <h2>🔒 Exam Mode</h2>
@@ -258,6 +275,6 @@
     <p>&copy; 2026 NihongoMockTest. All rights reserved.</p>
   </footer>
 
-  <script type="module" src="js/exam.js?v=38"></script>
+  <script type="module" src="js/exam.js?v=39"></script>
 </body>
 </html>

@@ -49,6 +49,46 @@ function isAdminPreviewRequested() {
  * "Preview as User") still receive the FULL content including
  * correctOption — the RPC itself branches on is_admin(), not this file.
  */
+/**
+ * Client-side cache for get_exam_content()'s response, keyed by testId
+ * + the tests.updated_at it was fetched with (a real, already-grantable
+ * column — see 0003_hide_answer_key.sql's `grant select (..., updated_at,
+ * ...)` — not a new one added for this). This exists because the exam
+ * *data* itself is NOT R2/CDN-hosted at all (only question images/audio
+ * are) — it's an authenticated Supabase RPC, which is a POST request
+ * and therefore not cacheable via ordinary HTTP/CDN cache semantics
+ * regardless of any header. Caching the RESULT client-side is the only
+ * way to avoid re-paying for that RPC on every retake.
+ *
+ * Never caches a response containing a real correctOption — that only
+ * happens for an admin session (get_exam_content strips it server-side
+ * for everyone else) — because localStorage is origin-scoped, not
+ * user-scoped: on a shared device, a later student session in the SAME
+ * browser could otherwise read an admin's cached answer key.
+ */
+const EXAM_CACHE_PREFIX = "nmt_exam_cache_v1:";
+
+function readExamCache(testId) {
+  try {
+    const raw = localStorage.getItem(EXAM_CACHE_PREFIX + testId);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null; // corrupted entry / storage unavailable — treat exactly like a cache miss
+  }
+}
+
+function writeExamCacheIfSafe(testId, updatedAt, content) {
+  const hasAnswerKey = (content.sections || []).some((sec) =>
+    (sec.groups || []).some((grp) => (grp.questions || []).some((q) => q.correctOption != null && q.correctOption !== ""))
+  );
+  if (hasAnswerKey) return;
+  try {
+    localStorage.setItem(EXAM_CACHE_PREFIX + testId, JSON.stringify({ updatedAt, content }));
+  } catch {
+    // Storage full / private-browsing quota / unavailable — not fatal, just skip caching this time; the exam still loaded fine via the RPC above.
+  }
+}
+
 async function fetchExport(testId) {
   if (isAdminPreviewRequested()) {
     const raw = localStorage.getItem(ADMIN_PREVIEW_KEY);
@@ -65,10 +105,34 @@ async function fetchExport(testId) {
     throw new Error("No testId provided — open this page from the dashboard, not directly.");
   }
   const { supabase } = await import("./supabaseClient.js?v=1");
+
+  // Cheap validation query — always real-time, never itself cached, but
+  // tiny compared to the full exam content payload (a handful of bytes
+  // vs. the whole test). Used both to decide whether a local cache hit
+  // is still valid, and as the version key a fresh fetch gets stored
+  // under. A failure here (network hiccup) just means "can't validate
+  // right now" — falls through to a real fetch below rather than ever
+  // silently trusting a cache entry we couldn't actually check.
+  let updatedAt = null;
+  try {
+    const { data: meta } = await supabase.from("tests").select("updated_at").eq("id", testId).maybeSingle();
+    updatedAt = meta?.updated_at || null;
+  } catch {
+    updatedAt = null;
+  }
+
+  if (updatedAt) {
+    const cached = readExamCache(testId);
+    if (cached && cached.updatedAt === updatedAt) {
+      return cached.content; // same version already known locally — skip the expensive RPC entirely
+    }
+  }
+
   const { data, error } = await supabase.rpc("get_exam_content", { p_test_id: testId });
   if (error || !data) {
     throw new Error("This test is unavailable, or you're not authorized to access it.");
   }
+  if (updatedAt) writeExamCacheIfSafe(testId, updatedAt, data);
   return data;
 }
 

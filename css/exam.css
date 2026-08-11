@@ -646,6 +646,36 @@
 
 .resume-choice-actions { flex-direction: column; gap: 10px; }
 
+/* =========================================================
+   VIEWPORT GATE — z-index deliberately higher than every dialog's
+   own ::backdrop (dialogs already sit in the browser's native
+   top-layer, but this must win over the fullscreen-lock dialog
+   too if both happen to apply at once) and higher than the
+   watermark/section-transition overlay. Plain fixed positioning,
+   not a <dialog>, so it can appear before any dialog-based flow
+   has even run and never depends on showModal()'s own semantics.
+   ========================================================= */
+.mobile-gate-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  padding-top: calc(24px + env(safe-area-inset-top, 0));
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0));
+}
+.mobile-gate-overlay:not([hidden]) { display: flex; }
+.mobile-gate-card {
+  max-width: 360px;
+  text-align: center;
+}
+.mobile-gate-card h2 { font-size: 1.15rem; margin: 0 0 8px; }
+.mobile-gate-card p { color: var(--color-text-muted); font-size: 0.92rem; margin: 0; line-height: 1.6; }
+
+
 /* Soft, quick entrance — the shared .modal::backdrop dim/blur (css/style.css)
    already applies instantly to every dialog; this animates the CARD itself
    only, so no other modal's opening behavior changes. */
