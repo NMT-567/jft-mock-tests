@@ -6,7 +6,7 @@
  * authorization check, just a read of whatever RLS lets through) plus
  * their own result history (spec §12).
  */
-import { requireAuth, signOut } from "./auth.js?v=4";
+import { requireAuth, getSession, signOut } from "./auth.js?v=5";
 import { supabase } from "./supabaseClient.js?v=1";
 import { hasActiveSession, loadSession, clearSession } from "./storage.js?v=8";
 import { hidePageLoader, initThemeToggle, stampYear, escapeHtml } from "./utils.js?v=6";
@@ -26,6 +26,24 @@ async function init() {
   stampYear();
   initThemeToggle(els.darkModeToggle);
   els.signOutBtn.addEventListener("click", handleSignOut);
+
+  // Root-URL requirement: a visitor with NO session at all sees nothing
+  // — not a redirect, not a login page, not even the loading spinner —
+  // just a blank page (the page-loader's own solid background, with
+  // its spinner hidden, IS the blank page; nothing else ever renders).
+  // Deliberately checked BEFORE requireAuth(), and deliberately NOT
+  // using requireAuth() itself, since that always redirects — this is
+  // the one non-redirecting check in the app, used only here. Anyone
+  // who actually has a session (even if not yet fully authorized —
+  // pending/disabled/expired) still falls through to the completely
+  // unchanged requireAuth() call below, which keeps redirecting them
+  // to login/access-denied exactly as it always has; only a true
+  // "never signed in" visitor gets this new blank treatment.
+  const session = await getSession();
+  if (!session) {
+    document.querySelector("#pageLoader .spinner")?.style.setProperty("display", "none");
+    return;
+  }
 
   const profile = await requireAuth();
   if (!profile) return; // requireAuth() already redirected to login or access-denied
