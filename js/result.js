@@ -9,7 +9,7 @@
  */
 import { loadResult } from "./storage.js?v=8";
 import { supabase } from "./supabaseClient.js?v=1";
-import { requireAuth } from "./auth.js?v=4";
+import { requireAuth } from "./auth.js?v=5";
 import { hidePageLoader, initThemeToggle, stampYear, getQueryParam, initPinchZoom } from "./utils.js?v=6";
 import { initContentProtection, initFullscreenGuard } from "./security.js?v=5";
 
@@ -354,7 +354,17 @@ function bindEvents() {
    limitation, not something fixable via meta/CSS/JS alone.
    ========================================================= */
 const ZOOM_LEVELS = [80, 90, 100, 110, 120, 130, 140, 150];
-let zoomLevel = 100;
+/** This page's own default/baseline zoom — intentionally denser than
+ * exam.js/review.js's shared 100% default, per an explicit request for
+ * a more compact result view. Used both as the initial value below and
+ * as what a genuine fullscreen-exit resets back to (see
+ * updateZoomModeForFullscreen) — so 80% is this page's real baseline in
+ * every circumstance, not just a one-time starting value. A user's own
+ * +/- adjustment during the session is never overwritten by anything
+ * here — only a real fullscreen transition ever touches zoomLevel again
+ * after this. */
+const DEFAULT_ZOOM_LEVEL = 80;
+let zoomLevel = DEFAULT_ZOOM_LEVEL;
 
 function applyZoom() {
   document.documentElement.style.setProperty("--exam-zoom", String(zoomLevel / 100));
@@ -400,14 +410,20 @@ function updateZoomModeForFullscreen() {
       resultPinchZoomHandle.teardown();
       resultPinchZoomHandle = null;
     }
-    if (zoomLevel !== 100) {
-      zoomLevel = 100;
+    if (zoomLevel !== DEFAULT_ZOOM_LEVEL) {
+      zoomLevel = DEFAULT_ZOOM_LEVEL;
       applyZoom();
     }
   }
 }
 document.addEventListener("fullscreenchange", updateZoomModeForFullscreen);
 updateZoomModeForFullscreen();
+// Apply the initial zoom level immediately — updateZoomModeForFullscreen()
+// above only calls applyZoom() when zoomLevel actually differs from its
+// own reset target, which is never true on a fresh page load (zoomLevel
+// already starts at DEFAULT_ZOOM_LEVEL). Without this, the CSS variable
+// would sit at its :root fallback (100%) until some later interaction.
+applyZoom();
 
 /* =========================================================
    FULLSCREEN REQUIREMENT — same reused pattern as exam.js's

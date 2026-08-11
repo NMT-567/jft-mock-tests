@@ -80,25 +80,37 @@ html[data-theme="dark"] .result-motivation-card.tier-low h2, html[data-theme="da
    ========================================================= */
 .jft-score-panel {
   text-align: center;
-  padding: 18px 20px;
+  padding: 16px 18px;
   margin-bottom: 12px;
   border: 1.5px solid var(--color-border);
 }
 .jft-score-panel-header {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px 10px;
   text-align: left;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 .jft-score-range-title { font-size: 1.1rem; margin: 0; }
+.jft-score-brand {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--color-primary);
+  white-space: nowrap;
+}
 .jft-score-label, .jft-score-range-label { display: flex; flex-direction: column; gap: 2px; }
 .jft-score-range-label { text-align: right; }
 .jft-score-label-ja { font-weight: 700; font-size: 0.95rem; }
 .jft-score-label-en { font-size: 0.78rem; color: var(--color-text-muted); }
 .jft-score-range-value { font-size: 0.85rem; font-weight: 600; margin-top: 2px; }
 
-.jft-score-big { font-size: 2.6rem; font-weight: 800; margin: 4px 0 14px; }
+.jft-score-big { font-size: 2.6rem; font-weight: 800; margin: 4px 0 10px; }
 .jft-score-unit { font-size: 1.1rem; font-weight: 600; color: var(--color-text-muted); }
 
-.score-range-bar { margin: 0 auto 12px; max-width: 480px; }
+.score-range-bar { margin: 0 auto 10px; max-width: 480px; }
 .score-range-track {
   position: relative;
   height: 10px;
@@ -150,7 +162,7 @@ html[data-theme="dark"] .result-motivation-card.tier-low h2, html[data-theme="da
   position: relative;
   display: flex;
   justify-content: space-between;
-  margin-top: 10px;
+  margin-top: 8px;
   font-size: 0.78rem;
   color: var(--color-text-muted);
 }
@@ -169,7 +181,7 @@ html[data-theme="dark"] .result-motivation-card.tier-low h2, html[data-theme="da
   font-weight: 800;
   font-size: 0.8rem;
   letter-spacing: 0.03em;
-  margin: 0 0 10px;
+  margin: 0 0 8px;
 }
 .jft-pass-fail-badge.pass { background: var(--color-success-light); color: var(--color-success); }
 .jft-pass-fail-badge.fail { background: var(--color-warning-light); color: var(--color-warning); }
