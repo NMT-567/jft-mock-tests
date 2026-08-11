@@ -34,7 +34,6 @@ const els = {
   resultMessageEn: document.getElementById("resultMessageEn"),
   sectionResultsList: document.getElementById("sectionResultsList"),
   reviewAnswersBtn: document.getElementById("reviewAnswersBtn"),
-  returnHomeBtn: document.getElementById("returnHomeBtn"),
   resultFullscreenModal: document.getElementById("resultFullscreenModal"),
   resultFullscreenText: document.getElementById("resultFullscreenText"),
   resultFullscreenError: document.getElementById("resultFullscreenError"),
@@ -332,9 +331,6 @@ function bindEvents() {
     // same attempt (?attemptId=...) and skip the auth gate the same way
     // this page did (?adminPreview=1) — see review.js's init().
     window.location.href = `review.html${window.location.search}`;
-  });
-  els.returnHomeBtn.addEventListener("click", () => {
-    window.location.href = "index.html";
   });
   els.resultFullscreenBtn.addEventListener("click", handleResultFullscreenClick);
   els.resultZoomOutBtn.addEventListener("click", zoomOut);
