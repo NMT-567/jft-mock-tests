@@ -5,13 +5,12 @@
  */
 import { loadResult } from "./storage.js?v=8";
 import { supabase } from "./supabaseClient.js?v=1";
-import { requireAuth } from "./auth.js?v=4";
+import { requireAuth } from "./auth.js?v=5";
 import { hidePageLoader, initThemeToggle, renderRichText, escapeHtml, getQueryParam, initPinchZoom } from "./utils.js?v=6";
 import { initContentProtection, initFullscreenGuard } from "./security.js?v=5";
 
 const els = {
   darkModeToggle: document.getElementById("darkModeToggle"),
-  backToResultBtn: document.getElementById("backToResultBtn"),
   reviewList: document.getElementById("reviewList"),
   reviewMain: document.querySelector(".review-main"),
   reviewFullscreenModal: document.getElementById("reviewFullscreenModal"),
@@ -62,9 +61,6 @@ async function loadResultFromAttempt(attemptId) {
 }
 
 function bindEvents() {
-  els.backToResultBtn.addEventListener("click", () => {
-    window.location.href = "result.html";
-  });
   els.reviewFullscreenBtn.addEventListener("click", handleReviewFullscreenClick);
   els.reviewZoomOutBtn.addEventListener("click", zoomOutReview);
   els.reviewZoomInBtn.addEventListener("click", zoomInReview);
