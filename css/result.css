@@ -1,4 +1,4 @@
-.result-main { padding: 32px 20px 60px; max-width: 760px; }
+.result-main { padding: 16px 16px 28px; max-width: 760px; }
 .result-zoom-content { zoom: var(--exam-zoom); }
 
 /* Old bilingual header/label rows kept in the DOM (still populated by
@@ -14,10 +14,10 @@
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 .result-page-header-text { flex: 1; text-align: center; padding-top: 6px; }
-.result-page-header-text h1 { font-size: 1.35rem; margin: 0 0 4px; }
+.result-page-header-text h1 { font-size: 1.35rem; margin: 0 0 2px; }
 .result-page-header-text p { font-size: 0.82rem; color: var(--color-text-muted); margin: 0; }
 
 /* =========================================================
@@ -26,8 +26,8 @@
 .result-motivation-card {
   text-align: center;
   border-radius: var(--radius-lg);
-  padding: 28px 24px;
-  margin-bottom: 20px;
+  padding: 16px 20px;
+  margin-bottom: 12px;
 }
 .result-motivation-card.tier-high { background: #dcfce7; }
 .result-motivation-card.tier-mid { background: #fef3c7; }
@@ -36,19 +36,19 @@ html[data-theme="dark"] .result-motivation-card.tier-high { background: #14301f;
 html[data-theme="dark"] .result-motivation-card.tier-mid,
 html[data-theme="dark"] .result-motivation-card.tier-low { background: #3a2e10; }
 .result-motivation-icon {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto 14px;
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 8px;
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.06);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.8rem;
+  font-size: 1.4rem;
 }
 .result-motivation-card h2 {
-  margin: 0 0 10px;
-  font-size: 1.4rem;
+  margin: 0 0 4px;
+  font-size: 1.25rem;
   font-weight: 800;
 }
 .result-motivation-card.tier-high h2, .result-motivation-card.tier-high p { color: #166534; }
@@ -64,13 +64,13 @@ html[data-theme="dark"] .result-motivation-card.tier-low h2, html[data-theme="da
   color: var(--color-text-muted);
   font-weight: 700;
   font-size: 0.9rem;
-  margin: 0 0 20px;
+  margin: 0 0 12px;
 }
 
 /* =========================================================
    JFT RESULT INTRO
    ========================================================= */
-.jft-result-intro { text-align: center; margin-bottom: 20px; }
+.jft-result-intro { text-align: center; margin-bottom: 12px; }
 .jft-result-title-ja { font-size: 1.3rem; margin: 0 0 4px; }
 .jft-result-title-en { color: var(--color-text-muted); margin: 0 0 8px; font-size: 0.95rem; }
 .result-test-meta { color: var(--color-text-muted); font-size: 0.85rem; margin: 0; }
@@ -80,13 +80,13 @@ html[data-theme="dark"] .result-motivation-card.tier-low h2, html[data-theme="da
    ========================================================= */
 .jft-score-panel {
   text-align: center;
-  padding: 28px 24px;
-  margin-bottom: 20px;
+  padding: 18px 20px;
+  margin-bottom: 12px;
   border: 1.5px solid var(--color-border);
 }
 .jft-score-panel-header {
   text-align: left;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 .jft-score-range-title { font-size: 1.1rem; margin: 0; }
 .jft-score-label, .jft-score-range-label { display: flex; flex-direction: column; gap: 2px; }
@@ -95,10 +95,10 @@ html[data-theme="dark"] .result-motivation-card.tier-low h2, html[data-theme="da
 .jft-score-label-en { font-size: 0.78rem; color: var(--color-text-muted); }
 .jft-score-range-value { font-size: 0.85rem; font-weight: 600; margin-top: 2px; }
 
-.jft-score-big { font-size: 2.6rem; font-weight: 800; margin: 8px 0 24px; }
+.jft-score-big { font-size: 2.6rem; font-weight: 800; margin: 4px 0 14px; }
 .jft-score-unit { font-size: 1.1rem; font-weight: 600; color: var(--color-text-muted); }
 
-.score-range-bar { margin: 0 auto 20px; max-width: 480px; }
+.score-range-bar { margin: 0 auto 12px; max-width: 480px; }
 .score-range-track {
   position: relative;
   height: 10px;
@@ -150,7 +150,7 @@ html[data-theme="dark"] .result-motivation-card.tier-low h2, html[data-theme="da
   position: relative;
   display: flex;
   justify-content: space-between;
-  margin-top: 14px;
+  margin-top: 10px;
   font-size: 0.78rem;
   color: var(--color-text-muted);
 }
@@ -169,7 +169,7 @@ html[data-theme="dark"] .result-motivation-card.tier-low h2, html[data-theme="da
   font-weight: 800;
   font-size: 0.8rem;
   letter-spacing: 0.03em;
-  margin: 0 0 14px;
+  margin: 0 0 10px;
 }
 .jft-pass-fail-badge.pass { background: var(--color-success-light); color: var(--color-success); }
 .jft-pass-fail-badge.fail { background: var(--color-warning-light); color: var(--color-warning); }
@@ -181,18 +181,18 @@ html[data-theme="dark"] .result-motivation-card.tier-low h2, html[data-theme="da
 /* =========================================================
    SECTION-BY-SECTION RESULTS
    ========================================================= */
-.jft-section-results { padding: 24px; }
-.jft-section-results-title-en-main { margin: 0 0 20px; font-size: 1.1rem; }
+.jft-section-results { padding: 16px 18px; }
+.jft-section-results-title-en-main { margin: 0 0 12px; font-size: 1.1rem; }
 
-.section-result-item { margin-bottom: 20px; }
+.section-result-item { margin-bottom: 12px; }
 .section-result-item:last-child { margin-bottom: 0; }
-.section-result-header { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
+.section-result-header { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 5px; flex-wrap: wrap; }
 .section-result-name { display: flex; flex-direction: column; }
 .section-result-name-ja { display: none; }
 .section-result-name-en { font-weight: 700; font-size: 0.92rem; color: var(--color-text); }
 .section-result-percentage { font-weight: 800; font-size: 1.05rem; flex-shrink: 0; }
 
-.section-result-bar-track { position: relative; height: 10px; border-radius: 999px; background: var(--color-gray-light); overflow: hidden; }
+.section-result-bar-track { position: relative; height: 8px; border-radius: 999px; background: var(--color-gray-light); overflow: hidden; }
 .section-result-bar-fill {
   position: absolute;
   top: 0; left: 0; height: 100%;
@@ -202,17 +202,17 @@ html[data-theme="dark"] .result-motivation-card.tier-low h2, html[data-theme="da
   transition: width 0.8s ease;
 }
 .section-result-bar-dot { display: none; }
-.section-result-detail { margin: 8px 0 0; font-size: 0.78rem; color: var(--color-text-muted); }
+.section-result-detail { margin: 5px 0 0; font-size: 0.78rem; color: var(--color-text-muted); }
 
 /* =========================================================
    ADDITIONAL RESULT INFORMATION
    ========================================================= */
-.result-extra-info { padding: 24px; margin-top: 20px; }
-.result-extra-info h2 { margin: 0 0 16px; font-size: 1.1rem; }
+.result-extra-info { padding: 16px 18px; margin-top: 12px; }
+.result-extra-info h2 { margin: 0 0 8px; font-size: 1.1rem; }
 .result-extra-info-row {
   display: flex;
   justify-content: space-between;
-  padding: 9px 0;
+  padding: 7px 0;
   border-bottom: 1px solid var(--color-border);
   font-size: 0.9rem;
 }
@@ -220,7 +220,7 @@ html[data-theme="dark"] .result-motivation-card.tier-low h2, html[data-theme="da
 .result-extra-info-row span:first-child { color: var(--color-text-muted); }
 .result-extra-info-row span:last-child { font-weight: 700; }
 
-.result-actions { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+.result-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
 .result-actions .btn { width: 100%; }
 
 /* =========================================================
