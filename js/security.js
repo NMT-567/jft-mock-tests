@@ -196,16 +196,48 @@ export function initFullscreenGuard(onExit) {
 }
 
 /**
+ * True for touch-primary devices (real phones/tablets), where the
+ * outer/inner-dimension gap this heuristic reads is not a usable signal
+ * at all — mobile browsers resize `innerHeight` relative to `outerHeight`
+ * on their own all the time (the address bar collapsing/expanding on
+ * scroll, the on-screen keyboard opening/closing), and an embedded
+ * WebView (an app's in-app browser, e.g. Classroom) can report either
+ * dimension inconsistently on top of that. None of it indicates a docked
+ * DevTools panel — a touch-primary device has no way to dock DevTools on
+ * its own screen in the first place (inspecting one requires a separate
+ * desktop over USB, which never shows up in this device's own
+ * outerWidth/innerWidth). Checked once at start, not per poll, since
+ * pointer type doesn't change mid-exam.
+ */
+function isCoarsePointerDevice() {
+  return typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
+}
+
+/**
  * Best-effort DevTools heuristic: polls the gap between outer and inner
  * window dimensions. A large, sustained gap suggests a docked DevTools
  * panel. This is NOT reliable on its own (see honesty note above) and is
  * only ever used as a soft deterrent + warning, never as the sole basis
  * for a security decision beyond ending the student's own exam attempt.
  *
+ * This exam is mobile-only (see exam.js's viewport gate — nothing but a
+ * phone-shaped viewport ever gets past it), so every real session runs on
+ * a touch-primary device where this specific signal is pure noise (see
+ * isCoarsePointerDevice above) — it was firing on ordinary address-bar/
+ * keyboard resizes triggered by normal navigation (e.g. the scroll-to-top
+ * on every Next), not on anything resembling DevTools. Skipped entirely
+ * there rather than tuned, since there's no threshold that separates
+ * "toolbar animation" from "docked panel" using a signal neither one
+ * reliably produces on mobile.
+ *
  * @param {() => void} onWarn - called on each new detection (show a warning)
  * @param {() => void} onTerminate - called once the warning threshold is exceeded
  */
 export function startDevToolsHeuristic(onWarn, onTerminate) {
+  if (isCoarsePointerDevice()) {
+    return () => {};
+  }
+
   let warnCount = 0;
   let wasOpen = false;
 
