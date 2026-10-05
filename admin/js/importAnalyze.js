@@ -66,10 +66,24 @@ export function detectPassageHeaderCount(raw) {
   const options = Array.isArray(raw.options) ? raw.options : [];
   if (options.length !== 0) return null;
   if (raw.correctOption) return null;
-  const match = /answer the following ([0-9０-９]+) questions?/i.exec(raw.question || "");
-  if (!match) return null;
-  const normalized = match[1].replace(/[０-９]/g, (d) => String.fromCharCode(d.charCodeAt(0) - 0xff10 + 0x30));
-  return parseInt(normalized, 10);
+  const text = raw.question || "";
+  const match = /answer the following ([0-9０-９]+) questions?/i.exec(text);
+  if (match) {
+    const normalized = match[1].replace(/[０-９]/g, (d) => String.fromCharCode(d.charCodeAt(0) - 0xff10 + 0x30));
+    return parseInt(normalized, 10);
+  }
+  // Real source data also phrases this header in the SINGULAR with no
+  // digit at all — "...answer the following question." — when the
+  // passage has exactly one child question. The digit-matching case
+  // above only fires when a number is actually spelled out, so this
+  // record was previously falling through undetected: it stayed in the
+  // group as a real "child" question, which it can never pass
+  // validation as (0 options), and the group's header text was lost.
+  // Confirmed against real data (a "reading" group whose own
+  // title/instructions/passageText are all empty strings — this
+  // sentence is the ONLY place the header text exists).
+  if (/answer the following question\b/i.test(text)) return 1;
+  return null;
 }
 
 /**
